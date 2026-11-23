@@ -1,0 +1,3154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ashlie Bakes Cakes - Bakery Operations & Recipe Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #faf7f2; -webkit-tap-highlight-color: transparent; }
+    .font-serif-title { font-family: 'Playfair Display', serif; }
+    .nav-tab.active { background-color: #7c2d12; color: #ffffff; border-color: #7c2d12; }
+    .sub-tab.active { border-bottom: 3px solid #b45309; color: #b45309; font-weight: 700; }
+    .tin-toggle.active { background-color: #b45309; color: #ffffff; font-weight: 700; border-color: #b45309; }
+    
+    /* Mobile-first touch & typography optimizations */
+    @media (max-width: 640px) {
+      input, select, textarea { font-size: 16px !important; } /* Prevents iOS auto-zoom on tap */
+      .nav-tab { padding: 8px 12px !important; font-size: 12px !important; }
+      .modal-box { margin: 8px !important; max-height: 92vh !important; padding: 16px !important; }
+      table { min-width: 540px; }
+    }
+    button, select, input[type="checkbox"], input[type="button"] { min-height: 42px; touch-action: manipulation; }
+  </style>
+</head>
+<body class="min-h-screen text-stone-800 flex flex-col">
+
+  <!-- TOP HEADER -->
+  <header class="bg-stone-900 text-stone-100 shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap justify-between items-center gap-3">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-full bg-amber-600 flex items-center justify-center text-white text-xl font-bold font-serif-title shadow">🍰</div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-white font-serif-title">Ashlie Bakes Cakes</h1>
+          <p class="text-xs text-amber-200">Commercial Bakery Manager & Recipe Hub</p>
+        </div>
+      </div>
+      
+      <!-- Quick Action Stats & Alert Indicator -->
+      <div class="flex items-center space-x-3 text-xs">
+        <div id="lowStockHeaderBadge" class="hidden cursor-pointer bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-full font-semibold flex items-center gap-1 shadow transition" onclick="switchTab('inventory')">
+          <span>⚠️</span> <span id="lowStockCountText">0 items low</span>
+        </div>
+        <button onclick="switchTab('import')" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg font-medium shadow flex items-center gap-1.5 transition">
+          <span>📥</span> Import Recipe
+        </button>
+        <button onclick="openNewRecipeModal()" class="bg-stone-800 hover:bg-stone-700 border border-stone-600 text-stone-200 px-3 py-1.5 rounded-lg font-medium shadow transition">
+          + Write New
+        </button>
+
+      </div>
+    </div>
+
+    <!-- MAIN APP NAVIGATION -->
+    <div class="bg-stone-800 border-t border-stone-700">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 flex space-x-1 overflow-x-auto text-sm py-1.5">
+        <button onclick="switchTab('recipes')" id="tabBtn-recipes" class="nav-tab active px-4 py-2 rounded-lg font-medium whitespace-nowrap transition">📖 Recipes & Formulas</button>
+        <button onclick="switchTab('baking')" id="tabBtn-baking" class="nav-tab px-4 py-2 rounded-lg font-medium text-stone-300 hover:bg-stone-700 whitespace-nowrap transition">👩‍🍳 I Am Baking!</button>
+        <button onclick="switchTab('inventory')" id="tabBtn-inventory" class="nav-tab px-4 py-2 rounded-lg font-medium text-stone-300 hover:bg-stone-700 whitespace-nowrap transition">📦 Raw Ingredients Stock</button>
+        <button onclick="switchTab('shed')" id="tabBtn-shed" class="nav-tab px-4 py-2 rounded-lg font-medium text-stone-300 hover:bg-stone-700 whitespace-nowrap transition">🏪 Shed & B2B Inventory</button>
+        <button onclick="switchTab('import')" id="tabBtn-import" class="nav-tab px-4 py-2 rounded-lg font-medium text-stone-300 hover:bg-stone-700 whitespace-nowrap transition">📄 Import Document</button>
+        <button onclick="switchTab('settings')" id="tabBtn-settings" class="nav-tab px-4 py-2 rounded-lg font-medium text-stone-300 hover:bg-stone-700 whitespace-nowrap transition">⚙️ Google Sheets Sync</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN BODY CONTENT CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full">
+
+    <!-- ==================== TAB 1: RECIPES & FORMULAS ==================== -->
+    <section id="tab-recipes" class="space-y-6">
+      
+      <!-- Recipe Selector Header Bar -->
+      <div id="recipeHeaderBar" class="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-stone-200">
+        <div class="flex flex-wrap items-center gap-4">
+          <!-- RECIPE SELECT -->
+          <div class="flex items-center gap-2">
+            <label class="font-bold text-stone-700 text-xs uppercase">Recipe:</label>
+            <select id="recipeSelect" onchange="loadSelectedRecipe()" class="border border-stone-300 bg-stone-50 rounded-lg px-3 py-2 text-xs font-bold text-stone-900 focus:ring-2 focus:ring-amber-500 outline-none min-w-[200px]">
+              <!-- Populated via JS -->
+            </select>
+          </div>
+
+          <!-- FLAVOUR / STYLE SELECT + QUICK ADD FLAVOUR BUTTON -->
+          <div id="recipeFlavourWrapper" class="flex items-center gap-2">
+            <label class="font-bold text-stone-700 text-xs uppercase">Flavour:</label>
+            <div class="flex items-center gap-1.5">
+              <select id="recipeFlavourSelect" onchange="changeFlavourSelection()" class="border border-amber-300 bg-amber-50 rounded-lg px-3 py-2 text-xs font-bold text-amber-950 focus:ring-2 focus:ring-amber-500 outline-none min-w-[190px]">
+                <!-- Populated via JS -->
+              </select>
+              <button onclick="openAddFlavourModal()" class="bg-amber-600 hover:bg-amber-500 text-white text-xs px-2.5 py-2 rounded-lg font-bold shadow transition flex items-center gap-1" title="Add a new flavour / variety">
+                <span>➕</span> Flavour
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="openEditRecipeModal()" class="text-xs text-stone-800 bg-stone-100 hover:bg-stone-200 border border-stone-300 px-3 py-2 rounded-lg font-bold transition flex items-center gap-1 shadow-sm">
+            <span>✏️</span> Edit Recipe
+          </button>
+          <button onclick="openManageFlavoursModal()" class="text-xs text-amber-900 bg-amber-100 hover:bg-amber-200 px-3 py-2 rounded-lg font-semibold transition">Manage Flavours</button>
+          <button onclick="deleteCurrentRecipe()" class="text-xs text-red-600 hover:text-red-800 px-3 py-2 border border-red-200 rounded-lg bg-red-50 hover:bg-red-100 transition">Delete</button>
+          <button onclick="openBakeFromCurrentRecipe()" class="bg-amber-700 hover:bg-amber-600 text-white text-xs px-4 py-2 rounded-lg font-bold shadow transition">Bake This Now →</button>
+        </div>
+      </div>
+
+      <!-- Empty State Card (when no recipes exist yet) -->
+      <div id="emptyRecipeState" class="hidden bg-white p-12 text-center rounded-2xl border-2 border-dashed border-stone-300 space-y-4">
+        <div class="text-5xl">🧁</div>
+        <h3 class="text-xl font-bold text-stone-800 font-serif-title">No Recipes Saved Yet</h3>
+        <p class="text-sm text-stone-600 max-w-md mx-auto">Upload an existing recipe document (.docx, .pdf, or text) or type in a fresh commercial recipe to get started.</p>
+        <div class="flex justify-center gap-4 pt-2">
+          <button onclick="switchTab('import')" class="bg-amber-700 hover:bg-amber-600 text-white px-5 py-2.5 rounded-xl font-semibold shadow transition text-sm">Import Recipe File</button>
+          <button onclick="openNewRecipeModal()" class="bg-stone-800 hover:bg-stone-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow transition text-sm">+ Write Recipe Manually</button>
+        </div>
+      </div>
+
+      <!-- ACTIVE RECIPE CONTAINER (3-Page Nested Header View) -->
+      <div id="activeRecipeContainer" class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
+        
+        <!-- Recipe Title & Metadata Banner -->
+        <div class="bg-gradient-to-r from-stone-900 to-stone-800 text-white p-6">
+          <div class="flex flex-wrap justify-between items-start gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span id="recipeCategoryBadge" class="bg-amber-600/30 text-amber-300 text-xs px-2.5 py-0.5 rounded-full font-semibold border border-amber-500/30 uppercase tracking-wider">Commercial Formula</span>
+                <span id="activeFlavourTag" class="bg-emerald-600/30 text-emerald-300 text-xs px-2.5 py-0.5 rounded-full font-semibold border border-emerald-500/30">Plain / Base (No Inclusions)</span>
+              </div>
+              <h2 id="recipeTitle" class="text-2xl sm:text-3xl font-bold font-serif-title mt-2">Recipe Title</h2>
+              
+              <!-- TIN SIZE TOGGLE BAR WITH "+ Add Tin Size" BUTTON -->
+              <div class="flex flex-wrap items-center gap-2 mt-3 text-xs">
+                <span class="text-stone-300 font-bold uppercase tracking-wider text-[11px]">Tin Size Preset:</span>
+                <div id="tinToggleButtonsGroup" class="flex flex-wrap items-center bg-stone-800 p-1 rounded-lg border border-stone-700 gap-1">
+                  <!-- Injected via JS (e.g. 1 Small Gastro, 3 Small Gastros) -->
+                </div>
+                <button onclick="openAddTinSizeModal()" class="bg-stone-700 hover:bg-stone-600 text-amber-300 px-3 py-1 rounded text-xs font-bold border border-stone-600 transition flex items-center gap-1 shadow">
+                  <span>➕</span> Add Tin Size
+                </button>
+                <button onclick="openManageTinsModal()" class="bg-stone-700 hover:bg-stone-600 text-stone-300 hover:text-white px-3 py-1 rounded text-xs font-bold border border-stone-600 transition flex items-center gap-1 shadow">
+                  <span>🗑️</span> Manage Tins
+                </button>
+              </div>
+            </div>
+            
+            <!-- Quick Info Chips -->
+            <div class="flex flex-wrap gap-2 text-xs">
+              <div class="bg-stone-800/80 border border-stone-700 px-3 py-1.5 rounded-lg">
+                <span class="text-stone-400 block text-[10px]">OVEN TEMP</span>
+                <span id="recipeOvenTemp" class="font-bold text-amber-400">160°C Fan</span>
+              </div>
+              <div class="bg-stone-800/80 border border-stone-700 px-3 py-1.5 rounded-lg">
+                <span class="text-stone-400 block text-[10px]">BAKE TIME</span>
+                <span id="recipeBakeTime" class="font-bold text-amber-400">25-30 mins</span>
+              </div>
+              <div class="bg-stone-800/80 border border-stone-700 px-3 py-1.5 rounded-lg">
+                <span class="text-stone-400 block text-[10px]">ACTIVE TIN</span>
+                <span id="recipeTinSizeDisplay" class="font-bold text-amber-400">1 Small Gastro</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- THE 3-PAGE SUB-NAVIGATION UNDER ONE HEADER -->
+          <div class="flex border-b border-stone-700 mt-6 -mb-6 space-x-6 text-sm">
+            <button onclick="switchRecipeSubTab('ingredients')" id="subTab-ingredients" class="sub-tab active pb-3 transition">Page 1: Recipe & Costing</button>
+            <button onclick="switchRecipeSubTab('method')" id="subTab-method" class="sub-tab pb-3 text-stone-400 hover:text-stone-200 transition">Page 2: Cooking Method</button>
+            <button onclick="switchRecipeSubTab('notes')" id="subTab-notes" class="sub-tab pb-3 text-stone-400 hover:text-stone-200 transition">Page 3: Baker's Notes & Storage</button>
+          </div>
+        </div>
+
+        <!-- SUB-PAGE 1: INGREDIENTS & MANUAL BATCH COSTING -->
+        <div id="recipePage-ingredients" class="p-6 space-y-6">
+          
+          <!-- BATCH COSTING & MULTI-TIER PRICING & SUNDRIES CALCULATOR -->
+          <div class="bg-stone-50 border border-stone-200 rounded-xl p-5 space-y-4">
+            <div class="flex flex-wrap justify-between items-center border-b border-stone-200 pb-3 gap-2">
+              <div>
+                <h4 class="font-bold text-stone-900 text-sm flex items-center gap-1.5">
+                  <span>💰</span> Costing & Sundries (Ingredients, Bags, Labels & Boxes)
+                </h4>
+                <p class="text-xs text-stone-500">Break down raw ingredients vs packaging sundries (bags, labels, boxes) to see true net margins.</p>
+              </div>
+              <button onclick="saveCostingEdits()" class="bg-stone-800 hover:bg-stone-700 text-white text-xs px-3.5 py-1.5 rounded-lg font-bold shadow transition flex items-center gap-1">
+                <span>💾</span> Save Costing Details
+              </button>
+            </div>
+
+            <!-- COST BREAKDOWN INPUTS -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <!-- Raw Ingredients Cost -->
+              <div class="bg-white p-3 rounded-lg border border-stone-200 shadow-sm">
+                <label class="block text-xs font-bold text-stone-700 mb-1">1. Ingredients Cost (£)</label>
+                <div class="flex items-center">
+                  <span class="text-stone-400 text-sm mr-1 font-bold">£</span>
+                  <input type="number" step="0.01" id="costBatchInput" class="w-full text-base font-bold text-stone-800 outline-none" value="14.50" oninput="updatePricingCalculations()">
+                </div>
+                <span class="text-[10px] text-stone-400 block mt-0.5">From your external recipe app</span>
+              </div>
+
+              <!-- Sundry: Per-Slice (Bags & Labels) -->
+              <div class="bg-white p-3 rounded-lg border border-stone-200 shadow-sm">
+                <label class="block text-xs font-bold text-stone-700 mb-1">2. Per-Slice Sundries (£)</label>
+                <div class="flex items-center">
+                  <span class="text-stone-400 text-sm mr-1 font-bold">£</span>
+                  <input type="number" step="0.01" id="costSliceSundryInput" class="w-full text-base font-bold text-amber-900 outline-none" value="0.15" oninput="updatePricingCalculations()">
+                </div>
+                <span class="text-[10px] text-stone-400 block mt-0.5">e.g. £0.10 Cello Bag + £0.05 Label</span>
+              </div>
+
+              <!-- Sundry: Per-Batch / Tray Box -->
+              <div class="bg-white p-3 rounded-lg border border-stone-200 shadow-sm">
+                <label class="block text-xs font-bold text-stone-700 mb-1">3. Whole Tray Box / Board (£)</label>
+                <div class="flex items-center">
+                  <span class="text-stone-400 text-sm mr-1 font-bold">£</span>
+                  <input type="number" step="0.01" id="costBatchSundryInput" class="w-full text-base font-bold text-amber-900 outline-none" value="0.80" oninput="updatePricingCalculations()">
+                </div>
+                <span class="text-[10px] text-stone-400 block mt-0.5">Gastro box, board, parchment paper</span>
+              </div>
+            </div>
+
+            <!-- SELLING OPTIONS & LIVE PROFIT CARDS -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+              <!-- Retail Option 1 (e.g. 18 slices @ £3.00) -->
+              <div class="bg-white p-3.5 rounded-lg border border-stone-200 shadow-sm space-y-1.5">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-bold text-stone-700 block">Retail Option A</span>
+                  <span id="costOpt1TotalCostTag" class="text-[10px] bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded font-semibold">Cost: £18.00</span>
+                </div>
+                <div class="flex gap-2">
+                  <div class="w-1/2">
+                    <span class="text-[10px] text-stone-400 block font-medium">Portions Cut</span>
+                    <input type="number" id="costOpt1Slices" class="w-full text-xs font-bold border-b border-stone-300 py-0.5 outline-none" value="18" oninput="updatePricingCalculations()">
+                  </div>
+                  <div class="w-1/2">
+                    <span class="text-[10px] text-stone-400 block font-medium">Price / Slice</span>
+                    <div class="flex items-center">
+                      <span class="text-stone-400 text-xs mr-0.5">£</span>
+                      <input type="number" step="0.05" id="costOpt1Price" class="w-full text-xs font-bold border-b border-stone-300 py-0.5 outline-none" value="3.00" oninput="updatePricingCalculations()">
+                    </div>
+                  </div>
+                </div>
+                <div id="costOpt1Summary" class="text-[11px] text-stone-600 pt-1 font-medium border-t border-stone-100">
+                  <!-- Injected via JS -->
+                </div>
+              </div>
+
+              <!-- Retail Option 2 (e.g. 24 slices @ £2.50) -->
+              <div class="bg-white p-3.5 rounded-lg border border-stone-200 shadow-sm space-y-1.5">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-bold text-stone-700 block">Retail Option B</span>
+                  <span id="costOpt2TotalCostTag" class="text-[10px] bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded font-semibold">Cost: £18.90</span>
+                </div>
+                <div class="flex gap-2">
+                  <div class="w-1/2">
+                    <span class="text-[10px] text-stone-400 block font-medium">Portions Cut</span>
+                    <input type="number" id="costOpt2Slices" class="w-full text-xs font-bold border-b border-stone-300 py-0.5 outline-none" value="24" oninput="updatePricingCalculations()">
+                  </div>
+                  <div class="w-1/2">
+                    <span class="text-[10px] text-stone-400 block font-medium">Price / Slice</span>
+                    <div class="flex items-center">
+                      <span class="text-stone-400 text-xs mr-0.5">£</span>
+                      <input type="number" step="0.05" id="costOpt2Price" class="w-full text-xs font-bold border-b border-stone-300 py-0.5 outline-none" value="2.50" oninput="updatePricingCalculations()">
+                    </div>
+                  </div>
+                </div>
+                <div id="costOpt2Summary" class="text-[11px] text-stone-600 pt-1 font-medium border-t border-stone-100">
+                  <!-- Injected via JS -->
+                </div>
+              </div>
+
+              <!-- B2B Wholesale Whole Tray -->
+              <div class="bg-amber-50/70 p-3.5 rounded-lg border border-amber-200 shadow-sm space-y-1.5">
+                <div class="flex justify-between items-center">
+                  <span class="text-xs font-bold text-amber-950 block">B2B Wholesale Whole Tray</span>
+                  <span id="costB2BTotalCostTag" class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-semibold">Cost: £15.30</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-amber-700 block font-medium">Tray Price (Wholesale)</span>
+                  <div class="flex items-center">
+                    <span class="text-amber-800 text-xs mr-1 font-bold">£</span>
+                    <input type="number" step="0.50" id="costB2BPrice" class="w-full text-xs font-bold text-amber-950 border-b border-amber-300 bg-transparent py-0.5 outline-none" value="38.00" oninput="updatePricingCalculations()">
+                  </div>
+                </div>
+                <div id="costB2BSummary" class="text-[11px] text-amber-900 pt-1 font-medium border-t border-amber-200/60">
+                  <!-- Injected via JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scaling Multiplier Controls -->
+          <div class="flex items-center justify-between border-b border-stone-100 pb-3">
+            <div>
+              <h3 class="text-lg font-bold text-stone-900 font-serif-title">Formula Ingredients</h3>
+              <p id="flavourNoteText" class="text-xs text-amber-800 font-medium"></p>
+            </div>
+            <div class="flex items-center gap-1.5 text-xs">
+              <span class="text-stone-500 mr-1 font-medium">Batch Scale:</span>
+              <button onclick="setMultiplier(0.5)" class="scale-btn px-2.5 py-1 border border-stone-300 rounded font-bold hover:bg-stone-100" data-mult="0.5">0.5x</button>
+              <button onclick="setMultiplier(1)" class="scale-btn active px-2.5 py-1 bg-amber-700 text-white rounded font-bold" data-mult="1">1.0x</button>
+              <button onclick="setMultiplier(1.5)" class="scale-btn px-2.5 py-1 border border-stone-300 rounded font-bold hover:bg-stone-100" data-mult="1.5">1.5x</button>
+              <button onclick="setMultiplier(2)" class="scale-btn px-2.5 py-1 border border-stone-300 rounded font-bold hover:bg-stone-100" data-mult="2">2.0x</button>
+            </div>
+          </div>
+
+          <!-- Ingredients List Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-stone-100 text-stone-600 text-xs uppercase font-semibold">
+                <tr>
+                  <th class="p-3 w-10">Checked</th>
+                  <th class="p-3">Ingredient</th>
+                  <th class="p-3">Base Qty (<span id="tableTinName">1 Small Gastro</span>)</th>
+                  <th class="p-3 font-bold text-amber-900">Scaled Qty</th>
+                  <th class="p-3">Pantry Status</th>
+                </tr>
+              </thead>
+              <tbody id="recipeIngredientsBody" class="divide-y divide-stone-100">
+                <!-- Dynamically rendered -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SUB-PAGE 2: COOKING & BAKING METHOD -->
+        <div id="recipePage-method" class="p-6 hidden space-y-6">
+          <div class="flex justify-between items-center border-b border-stone-200 pb-3">
+            <h3 class="text-lg font-bold text-stone-900 font-serif-title">Step-by-Step Production Method</h3>
+            <span class="text-xs text-stone-500">Tap checkboxes to track your baking progress</span>
+          </div>
+
+          <div id="methodStepsList" class="space-y-4">
+            <!-- Dynamically populated numbered steps -->
+          </div>
+        </div>
+
+        <!-- SUB-PAGE 3: BAKER'S NOTES, ALLERGENS & STORAGE -->
+        <div id="recipePage-notes" class="p-6 hidden space-y-6">
+          <div class="border-b border-stone-200 pb-3">
+            <h3 class="text-lg font-bold text-stone-900 font-serif-title">Baker's Notes, Commercial Shelf-Life & Variations</h3>
+            <p class="text-xs text-stone-500">Handling instructions, preservative guidelines, and variation formulas.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-amber-50/50 border border-amber-200 rounded-xl p-5 space-y-3">
+              <h4 class="font-bold text-amber-900 text-sm flex items-center gap-1.5">
+                <span>⏱️</span> Shelf Life & Storage Protocol
+              </h4>
+              <div id="notesShelfLife" class="text-xs text-stone-700 space-y-2 leading-relaxed">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <div class="bg-stone-50 border border-stone-200 rounded-xl p-5 space-y-3">
+              <h4 class="font-bold text-stone-900 text-sm flex items-center gap-1.5">
+                <span>⚠️</span> Commercial Notes & Tin Depth
+              </h4>
+              <div id="notesHandling" class="text-xs text-stone-700 space-y-2 leading-relaxed">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Variations & Add-ins -->
+          <div class="bg-white border border-stone-200 rounded-xl p-5 space-y-3">
+            <h4 class="font-bold text-stone-900 text-sm flex items-center gap-1.5">
+              <span>🍓</span> Available Flavour Variations & Add-ins
+            </h4>
+            <div id="notesVariations" class="text-xs text-stone-700 leading-relaxed">
+              <!-- Injected via JS -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: I AM BAKING! (PRODUCTION ENGINE) ==================== -->
+    <section id="tab-baking" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 space-y-6">
+        <div class="border-b border-stone-200 pb-4">
+          <span class="text-xs uppercase tracking-wider text-amber-700 font-bold">Production Run</span>
+          <h2 class="text-2xl font-bold text-stone-900 font-serif-title mt-1">Log a Bake & Auto-Deduct Inventory</h2>
+          <p class="text-xs text-stone-600 mt-1">Select your item, flavour, tin size, and portions preset. Exact ingredients and toppings will be calculated and deducted automatically.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <!-- Step 1: Select Recipe -->
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-stone-700 uppercase">1. Item</label>
+            <select id="bakeSelectRecipe" onchange="onBakeRecipeChange()" class="w-full border border-stone-300 rounded-lg p-2.5 text-xs bg-stone-50 font-bold outline-none focus:ring-2 focus:ring-amber-500">
+              <!-- Populated via JS -->
+            </select>
+          </div>
+
+          <!-- Step 2: Select Flavour -->
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-stone-700 uppercase">2. Flavour / Style</label>
+            <select id="bakeSelectFlavour" onchange="renderBakeDeductionPreview()" class="w-full border border-amber-300 bg-amber-50 rounded-lg p-2.5 text-xs font-bold text-amber-950 outline-none focus:ring-2 focus:ring-amber-500">
+              <!-- Populated via JS -->
+            </select>
+          </div>
+
+          <!-- Step 3: Tin Size Toggle -->
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-stone-700 uppercase">3. Tin Size</label>
+            <select id="bakeSelectTin" onchange="renderBakeDeductionPreview()" class="w-full border border-stone-300 rounded-lg p-2.5 text-xs bg-stone-50 font-bold outline-none focus:ring-2 focus:ring-amber-500">
+              <!-- Populated via JS -->
+            </select>
+          </div>
+
+          <!-- Step 4: Portions Preset Dropdown -->
+          <div class="space-y-1">
+            <label class="block text-xs font-bold text-stone-700 uppercase">4. Portions Preset</label>
+            <div class="flex flex-col gap-1.5">
+              <select id="bakePortionPresetSelect" onchange="onPortionPresetChange()" class="w-full border border-stone-300 rounded-lg p-2 text-xs bg-stone-50 font-bold text-stone-900 outline-none focus:ring-2 focus:ring-amber-500">
+                <option value="18_retail">18 Large Slices (Honesty Shed)</option>
+                <option value="24_retail">24 Standard / Café Slices</option>
+                <option value="15_retail">15 Slices</option>
+                <option value="12_retail">12 Jumbo Slices</option>
+                <option value="16_retail">16 Slices (Square / Round)</option>
+                <option value="9_retail">9 Slices (8x8 Pan)</option>
+                <option value="1_b2b">1 Whole Tray (B2B Wholesale)</option>
+                <option value="custom">Custom Count...</option>
+              </select>
+              <div class="flex items-center gap-1.5">
+                <input type="number" id="bakePortionsGot" class="w-1/2 border border-stone-300 rounded-lg p-1.5 text-xs font-bold text-center outline-none focus:ring-2 focus:ring-amber-500" value="18" min="1" oninput="onCustomPortionInput()">
+                <select id="bakeYieldType" onchange="renderBakeDeductionPreview()" class="w-1/2 border border-stone-300 rounded-lg p-1.5 text-xs bg-stone-50 font-medium outline-none">
+                  <option value="retail">Retail Slices</option>
+                  <option value="b2b">B2B Whole Tray</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Deduction Preview Table -->
+        <div class="bg-stone-50 border border-stone-200 rounded-xl p-4 space-y-3">
+          <div class="flex justify-between items-center">
+            <h4 class="font-bold text-stone-800 text-sm flex items-center gap-2">
+              <span>📋</span> Raw Stock Deduction Preview (Includes Flavour Toppings)
+            </h4>
+            <span class="text-xs text-stone-500">Pantry balance will be updated automatically</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-stone-200/70 text-stone-700 font-semibold uppercase">
+                <tr>
+                  <th class="p-2.5">Ingredient / Inclusion</th>
+                  <th class="p-2.5">To Deduct</th>
+                  <th class="p-2.5">Current Stock</th>
+                  <th class="p-2.5">Stock After Bake</th>
+                  <th class="p-2.5">Status</th>
+                </tr>
+              </thead>
+              <tbody id="bakeDeductionPreviewBody" class="divide-y divide-stone-200">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <button onclick="confirmAndExecuteBake()" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl shadow-md transition flex items-center gap-2 text-sm">
+            <span>✨</span> Confirm Bake & Update All Inventories
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: RAW INGREDIENTS INVENTORY ==================== -->
+    <section id="tab-inventory" class="hidden space-y-6">
+      
+      <!-- Top Alert Notification (When below threshold) -->
+      <div id="reorderAlertBanner" class="hidden bg-red-50 border-2 border-red-300 rounded-2xl p-5 shadow-sm space-y-3">
+        <div class="flex flex-wrap justify-between items-center gap-3">
+          <div class="flex items-center gap-3">
+            <span class="text-3xl">🚨</span>
+            <div>
+              <h3 class="font-bold text-red-900 text-base">Delivery / Restock Needed!</h3>
+              <p class="text-xs text-red-700">The following ingredients have fallen below your preset minimum reorder threshold.</p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="copyRestockList()" class="bg-red-700 hover:bg-red-800 text-white text-xs px-4 py-2 rounded-lg font-bold shadow transition flex items-center gap-1.5">
+              <span>📋</span> Copy Restock List
+            </button>
+            <button onclick="triggerManualSheetSync()" class="bg-stone-800 hover:bg-stone-900 text-white text-xs px-4 py-2 rounded-lg font-bold shadow transition flex items-center gap-1.5">
+              <span>📊</span> Sync to Google Sheet
+            </button>
+          </div>
+        </div>
+
+        <!-- Badges of Low Items -->
+        <div id="lowStockItemsList" class="flex flex-wrap gap-2 pt-2">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <!-- Controls & Search -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-3">
+          <div>
+            <h2 class="text-xl font-bold text-stone-900 font-serif-title">Raw Ingredients Master Stock</h2>
+            <p class="text-xs text-stone-500">Live balance in grams, ml, and units. Click directly on any Current Stock box to edit quantities instantly!</p>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <button onclick="openRestockModal()" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs px-4 py-2 rounded-lg font-bold shadow transition flex items-center gap-1.5">
+              <span>➕</span> Restock / Bulk Purchase
+            </button>
+            <button onclick="openNewIngredientModal()" class="bg-stone-800 hover:bg-stone-700 text-white text-xs px-3 py-2 rounded-lg font-medium transition">
+              + New Item
+            </button>
+          </div>
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="flex flex-wrap gap-3">
+          <input type="text" id="inventorySearchInput" oninput="renderInventoryTable()" placeholder="Search ingredients (e.g. Flour, Butter, Eggs)..." class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-xs bg-stone-50 outline-none focus:ring-2 focus:ring-amber-500">
+          <select id="inventoryCategoryFilter" onchange="renderInventoryTable()" class="border border-stone-300 rounded-lg px-3 py-2 text-xs bg-stone-50 outline-none">
+            <option value="all">All Categories</option>
+            <option value="Flours & Dry Ingredients">Flours & Dry Ingredients</option>
+            <option value="Sugars & Sweeteners">Sugars & Sweeteners</option>
+            <option value="Dairy & Fats">Dairy & Fats</option>
+            <option value="Fresh & Chilled">Fresh & Chilled</option>
+            <option value="Chocolate & Inclusions">Chocolate & Inclusions</option>
+            <option value="Specialty & Additives">Specialty & Additives</option>
+          </select>
+        </div>
+
+        <!-- Ingredients Table (WITH DIRECT EDITABLE STOCK!) -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-stone-100 text-stone-600 text-xs uppercase font-semibold">
+              <tr>
+                <th class="p-3">Ingredient</th>
+                <th class="p-3">Category</th>
+                <th class="p-3">Current Stock (Click to Edit)</th>
+                <th class="p-3">Reorder Threshold</th>
+                <th class="p-3">Stock Gauge</th>
+                <th class="p-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryTableBody" class="divide-y divide-stone-100">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: FINISHED SHED & B2B INVENTORY ==================== -->
+    <section id="tab-shed" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 space-y-6">
+        <div class="flex flex-wrap justify-between items-center gap-3 border-b border-stone-200 pb-4">
+          <div>
+            <span class="text-xs uppercase tracking-wider text-amber-700 font-bold">Baked Goods</span>
+            <h2 class="text-xl font-bold text-stone-900 font-serif-title mt-1">Honesty Shed & B2B Inventory</h2>
+            <p class="text-xs text-stone-500">Track ready-to-sell portions currently in the display shed or wholesale orders ready for delivery.</p>
+          </div>
+          <button onclick="openNewShedItemModal()" class="bg-stone-800 hover:bg-stone-700 text-white text-xs px-3 py-2 rounded-lg font-medium transition">
+            + Add Product
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-stone-100 text-stone-600 text-xs uppercase font-semibold">
+              <tr>
+                <th class="p-3">Product Name</th>
+                <th class="p-3">Format</th>
+                <th class="p-3">Selling Price</th>
+                <th class="p-3">Total In Stock</th>
+                <th class="p-3">Stock Level</th>
+                <th class="p-3 text-right">Log Sale</th>
+              </tr>
+            </thead>
+            <tbody id="shedTableBody" class="divide-y divide-stone-100">
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: IMPORT DOCUMENT ==================== -->
+    <section id="tab-import" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 space-y-6">
+        <div class="border-b border-stone-200 pb-4">
+          <span class="text-xs uppercase tracking-wider text-amber-700 font-bold">Smart Recipe Parser</span>
+          <h2 class="text-2xl font-bold text-stone-900 font-serif-title mt-1">Import Existing Recipe Document</h2>
+          <p class="text-xs text-stone-600 mt-1">Upload a Word doc (.docx), PDF (.pdf), or paste raw recipe text. Multi-tin and flavour variations are parsed automatically.</p>
+        </div>
+
+        <!-- File Upload Area -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="border-2 border-dashed border-stone-300 hover:border-amber-500 rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center bg-stone-50/50" onclick="document.getElementById('recipeFileInput').click()">
+            <input type="file" id="recipeFileInput" accept=".docx,.pdf,.txt" class="hidden" onchange="handleFileUpload(event)">
+            <span class="text-4xl mb-2">📂</span>
+            <p class="text-sm font-bold text-stone-800">Click to Select Recipe File</p>
+            <p class="text-xs text-stone-500 mt-1">Supports Word (.docx), PDF (.pdf), or Text (.txt)</p>
+          </div>
+
+          <!-- Paste Raw Text Alternative -->
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <label class="text-xs font-bold text-stone-700 uppercase">Or Paste Recipe Text Here:</label>
+              <button onclick="insertSampleBrownieText()" class="text-xs text-amber-700 hover:text-amber-800 font-semibold underline">Insert Sample Multi-Tin Brownie</button>
+            </div>
+            <textarea id="rawRecipeTextInput" rows="6" placeholder="Paste full document text containing ingredients, steps, and notes..." class="w-full text-xs font-mono border border-stone-300 rounded-xl p-3 bg-stone-50 outline-none focus:ring-2 focus:ring-amber-500"></textarea>
+            <button onclick="parseRawText()" class="w-full bg-amber-700 hover:bg-amber-600 text-white font-semibold py-2 rounded-xl text-xs shadow transition">Parse Document Text →</button>
+          </div>
+        </div>
+
+        <!-- Parsed Results Preview & Confirm -->
+        <div id="parsePreviewContainer" class="hidden bg-stone-50 border border-stone-200 rounded-2xl p-6 space-y-4">
+          <div class="flex justify-between items-center border-b border-stone-200 pb-3">
+            <h3 class="font-bold text-stone-900 text-base font-serif-title">Extracted Recipe Structure</h3>
+            <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full">Ready to Save</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <!-- Col 1: Extracted Meta & Ingredients -->
+            <div class="bg-white p-4 rounded-xl border border-stone-200 space-y-2">
+              <span class="font-bold text-amber-900 block border-b pb-1">Page 1: Recipe & Ingredients</span>
+              <p><strong class="text-stone-700">Title:</strong> <span id="previewTitle" class="font-semibold text-stone-900"></span></p>
+              <p><strong class="text-stone-700">Tin Sizes Extracted:</strong> <span id="previewTinList" class="font-bold text-amber-800"></span></p>
+              <p><strong class="text-stone-700">Flavours Detected:</strong> <span id="previewFlavoursList" class="font-bold text-emerald-800"></span></p>
+              <ul id="previewIngredientList" class="list-disc pl-4 text-stone-600 space-y-1 max-h-40 overflow-y-auto"></ul>
+            </div>
+
+            <!-- Col 2: Extracted Method Steps -->
+            <div class="bg-white p-4 rounded-xl border border-stone-200 space-y-2">
+              <span class="font-bold text-amber-900 block border-b pb-1">Page 2: Method Steps</span>
+              <p><strong class="text-stone-700">Steps Detected:</strong> <span id="previewStepCount" class="font-bold text-amber-700"></span></p>
+              <ol id="previewStepsList" class="list-decimal pl-4 text-stone-600 space-y-1 max-h-48 overflow-y-auto"></ol>
+            </div>
+
+            <!-- Col 3: Extracted Notes & Storage -->
+            <div class="bg-white p-4 rounded-xl border border-stone-200 space-y-2">
+              <span class="font-bold text-amber-900 block border-b pb-1">Page 3: Notes & Storage</span>
+              <p id="previewNotes" class="text-stone-600 whitespace-pre-line max-h-48 overflow-y-auto"></p>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-2">
+            <button onclick="discardParsedRecipe()" class="px-4 py-2 border border-stone-300 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-200 transition">Cancel</button>
+            <button onclick="saveParsedRecipeToCatalog()" class="bg-amber-700 hover:bg-amber-600 text-white font-bold px-6 py-2 rounded-xl text-xs shadow transition">Save to Recipe Hub & Use →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 6: GOOGLE SHEETS SYNC ==================== -->
+    <section id="tab-settings" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 space-y-6">
+        <div class="border-b border-stone-200 pb-4">
+          <span class="text-xs uppercase tracking-wider text-amber-700 font-bold">Live Integration</span>
+          <h2 class="text-2xl font-bold text-stone-900 font-serif-title mt-1">Google Sheets Webhook Sync</h2>
+          <p class="text-xs text-stone-600 mt-1">Automatically send low stock and reorder notifications to your Google Sheet in real time.</p>
+        </div>
+
+        <div class="max-w-xl space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-stone-700 uppercase mb-1">Google Apps Script Web App URL</label>
+            <input type="text" id="sheetsWebhookUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-stone-300 rounded-xl p-3 text-xs bg-stone-50 font-mono outline-none focus:ring-2 focus:ring-amber-500">
+            <p class="text-[11px] text-stone-500 mt-1">Paste your deployed Web App URL here to enable background updates.</p>
+          </div>
+
+          <div class="flex gap-3">
+            <button onclick="saveWebhookUrl()" class="bg-amber-700 hover:bg-amber-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow transition">Save Webhook URL</button>
+            <button onclick="testGoogleSheetSync()" class="bg-stone-800 hover:bg-stone-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition">Send Test Alert</button>
+          </div>
+
+          <div id="syncStatusMessage" class="text-xs font-semibold"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER / SYSTEM MAINTENANCE (Discreet Bottom of Page) -->
+  <footer class="mt-auto py-8 border-t border-stone-200 bg-stone-100/60 text-stone-400 text-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap justify-between items-center gap-4">
+      <div class="flex items-center gap-2">
+        <span>Ashlie Bakes Cakes &bull; Commercial Operations System</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <details class="cursor-pointer">
+          <summary class="hover:text-stone-600 transition text-[11px] select-none">Advanced System Maintenance &blacktriangledown;</summary>
+          <div class="mt-2 p-3 bg-white border border-stone-200 rounded-xl shadow-sm text-left max-w-xs space-y-2">
+            <p class="text-[10px] text-stone-500">Only use if experiencing memory conflicts. Restores clean master brownie and base templates while preserving your Webhook URL.</p>
+            <button onclick="resetCacheAndReload()" class="w-full text-center bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded-lg font-bold text-[11px] transition">
+              ⚠️ Reset Stored Cache
+            </button>
+          </div>
+        </details>
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- ==================== MODALS ==================== -->
+
+    <!-- MODAL: MANAGE TINS -->
+  <div id="manageTinsModal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-stone-200">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="text-lg font-bold text-stone-900 font-serif-title">📏 Manage Tin Sizes</h3>
+        <button onclick="closeManageTinsModal()" class="text-stone-400 hover:text-stone-600 text-lg">&times;</button>
+      </div>
+      <p class="text-xs text-stone-500">View and remove pan presets you no longer use.</p>
+      
+      <div id="currentTinsList" class="space-y-2 max-h-56 overflow-y-auto">
+        <!-- Rendered via JS -->
+      </div>
+
+      <div class="flex justify-end pt-2 border-t">
+        <button onclick="closeManageTinsModal()" class="px-4 py-2 bg-stone-200 hover:bg-stone-300 rounded-lg text-xs font-semibold text-stone-700">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD TIN SIZE -->
+  <div id="addTinSizeModal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-stone-200">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="text-lg font-bold text-stone-900 font-serif-title">➕ Add Tin Size Preset</h3>
+        <button onclick="closeAddTinSizeModal()" class="text-stone-400 hover:text-stone-600 text-lg">&times;</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-stone-700 mb-1">Tin / Pan Size Name</label>
+          <input type="text" id="newTinName" placeholder="e.g. 8x8&quot; Square Pan, 10&quot; Round, 2 Gastros" class="w-full border border-stone-300 rounded-lg p-2.5 font-bold outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+        <div>
+          <label class="block font-bold text-stone-700 mb-1">Scaling Factor (vs Base 1-Gastro Recipe)</label>
+          <select id="newTinScaleFactor" class="w-full border border-stone-300 rounded-lg p-2.5 bg-stone-50 font-bold outline-none">
+            <option value="0.5">0.5x (Half Batch / 8x8&quot; Square)</option>
+            <option value="0.75">0.75x (3/4 Batch / 8&quot; Round)</option>
+            <option value="1.0">1.0x (1 Gastro / Standard)</option>
+            <option value="1.5">1.5x (1.5 Trays / 10&quot; Deep)</option>
+            <option value="2.0">2.0x (Double Batch / 2 Gastros)</option>
+            <option value="3.0" selected>3.0x (Triple Batch / 3 Small Gastros)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-stone-700 mb-1">Default Cut / Portions Preset</label>
+          <select id="newTinDefaultPortions" class="w-full border border-stone-300 rounded-lg p-2.5 bg-stone-50 font-bold outline-none">
+            <option value="18_retail">18 Large Slices (Honesty Shed)</option>
+            <option value="24_retail">24 Standard / Café Slices</option>
+            <option value="16_retail">16 Slices (Round / Square)</option>
+            <option value="9_retail">9 Slices (8x8 Pan)</option>
+            <option value="1_b2b">1 Whole Tray (B2B Wholesale)</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button onclick="closeAddTinSizeModal()" class="px-4 py-2 border border-stone-300 rounded-lg text-xs font-semibold text-stone-600 hover:bg-stone-100">Cancel</button>
+        <button onclick="submitNewTinSize()" class="bg-amber-700 hover:bg-amber-600 text-white px-5 py-2 rounded-lg text-xs font-bold shadow">Save Tin Size</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DYNAMIC MULTI-INCLUSION FLAVOUR BUILDER -->
+  <div   <!-- MODAL: DYNAMIC MULTI-INCLUSION BUILDER WITH DEDICATED PER-TIN WEIGHTS -->
+  <div id="addFlavourModal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="modal-box bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-xl border border-stone-200 my-auto max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b pb-3">
+        <div>
+          <h3 id="flavourModalTitle" class="text-base sm:text-lg font-bold text-stone-900 font-serif-title">➕ Add Flavour & Dedicated Inclusions</h3>
+          <p class="text-[11px] text-stone-500">Specify exact inclusion weights for each pan size.</p>
+        </div>
+        <button onclick="closeAddFlavourModal()" class="text-stone-400 hover:text-stone-600 text-xl p-1">&times;</button>
+      </div>
+
+      <input type="hidden" id="editFlavourIndex" value="-1">
+
+      <div class="space-y-4 text-xs sm:text-sm">
+        <div>
+          <label class="block font-bold text-stone-700 mb-1">Flavour / Variety Name</label>
+          <input type="text" id="quickFlavourName" placeholder="e.g. White Chocolate & Raspberry" class="w-full border border-stone-300 rounded-lg p-2.5 font-bold outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-1.5">
+            <label class="font-bold text-stone-700">Inclusions (Exact Weights Per Pan)</label>
+            <span class="text-[11px] text-amber-800 font-semibold">Custom grams per tin</span>
+          </div>
+
+          <!-- DYNAMIC REPEATING INCLUSION CARDS -->
+          <div id="inclusionsContainer" class="space-y-2.5">
+            <!-- Injected via JavaScript -->
+          </div>
+
+          <button type="button" onclick="addInclusionRow()" class="mt-2.5 w-full py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition">
+            <span>➕</span> Add Another Inclusion & Weights
+          </button>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t">
+        <button onclick="closeAddFlavourModal()" class="px-4 py-2 border border-stone-300 rounded-lg text-xs font-semibold text-stone-600 hover:bg-stone-100">Cancel</button>
+        <button onclick="submitMultiInclusionFlavour()" class="bg-amber-700 hover:bg-amber-600 text-white px-5 py-2 rounded-lg text-xs font-bold shadow">Save Flavour</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT RECIPE (IN-PLACE COMPLETE RECIPE EDITOR) -->
+  <div id="editRecipeModal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="modal-box bg-white rounded-2xl max-w-2xl w-full p-5 sm:p-6 space-y-4 shadow-xl border border-stone-200 my-auto max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="text-base sm:text-lg font-bold text-stone-900 font-serif-title">✏️ Edit Recipe Details & Formulas</h3>
+        <button onclick="closeEditRecipeModal()" class="text-stone-400 hover:text-stone-600 text-xl p-1">&times;</button>
+      </div>
+
+      <div class="space-y-4 text-xs sm:text-sm">
+        <div>
+          <label class="block font-bold text-stone-700 mb-1">Recipe Name</label>
+          <input type="text" id="editRecipeName" class="w-full border border-stone-300 rounded-lg p-2.5 font-bold outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">Oven Temperature</label>
+            <input type="text" id="editRecipeOvenTemp" class="w-full border border-stone-300 rounded-lg p-2 font-medium outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">Bake Time</label>
+            <input type="text" id="editRecipeBakeTime" class="w-full border border-stone-300 rounded-lg p-2 font-medium outline-none">
+          </div>
+        </div>
+
+        <!-- Tin Ingredients Editor Tabs -->
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="font-bold text-stone-700">Formula Weights Per Tin Size</label>
+            <span class="text-[11px] text-stone-400">Edit gram amounts directly</span>
+          </div>
+          <div id="editTinSelectorButtons" class="flex flex-wrap gap-1.5 mb-2">
+            <!-- Tin selector buttons injected via JS -->
+          </div>
+          <div id="editTinIngredientsContainer" class="space-y-1.5 max-h-56 overflow-y-auto border border-stone-200 rounded-xl p-2.5 bg-stone-50/50">
+            <!-- Ingredient rows for selected tin injected via JS -->
+          </div>
+        </div>
+
+        <!-- Method Steps -->
+        <div>
+          <label class="block font-bold text-stone-700 mb-1">Method Steps (one step per line)</label>
+          <textarea id="editRecipeSteps" rows="4" class="w-full border border-stone-300 rounded-lg p-2.5 text-xs font-mono outline-none"></textarea>
+        </div>
+
+        <!-- Quality & Storage Notes -->
+        <div>
+          <label class="block font-bold text-stone-700 mb-1">Baker's Notes & Storage</label>
+          <textarea id="editRecipeNotes" rows="3" class="w-full border border-stone-300 rounded-lg p-2.5 text-xs outline-none"></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t">
+        <button onclick="closeEditRecipeModal()" class="px-4 py-2 border border-stone-300 rounded-lg text-xs font-semibold text-stone-600 hover:bg-stone-100">Cancel</button>
+        <button onclick="saveRecipeEdits()" class="bg-amber-700 hover:bg-amber-600 text-white px-5 py-2 rounded-lg text-xs font-bold shadow">Save Recipe Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT INVENTORY ITEM -->
+  <div id="editInventoryModal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+    <div class="modal-box bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 space-y-4 shadow-xl border border-stone-200">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="text-base sm:text-lg font-bold text-stone-900 font-serif-title">✏️ Edit Inventory Item</h3>
+        <button onclick="closeEditInventoryModal()" class="text-stone-400 hover:text-stone-600 text-xl p-1">&times;</button>
+      </div>
+
+      <input type="hidden" id="editInvItemId">
+
+      <div class="space-y-3 text-xs sm:text-sm">
+        <div>
+          <label class="block font-bold text-stone-700 mb-1">Ingredient Name</label>
+          <input type="text" id="editInvName" class="w-full border border-stone-300 rounded-lg p-2 font-bold outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">Category</label>
+            <select id="editInvCategory" class="w-full border border-stone-300 rounded-lg p-2 bg-stone-50 outline-none">
+              <option value="Flours & Dry Ingredients">Flours & Dry</option>
+              <option value="Sugars & Sweeteners">Sugars</option>
+              <option value="Dairy & Fats">Dairy & Fats</option>
+              <option value="Fresh & Chilled">Fresh & Chilled</option>
+              <option value="Chocolate & Inclusions">Chocolate & Inclusions</option>
+              <option value="Specialty & Additives">Specialty / Additives</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">Unit</label>
+            <select id="editInvUnit" class="w-full border border-stone-300 rounded-lg p-2 bg-stone-50 outline-none">
+              <option value="g">Grams (g)</option>
+              <option value="ml">Millilitres (ml)</option>
+              <option value="units">Units / Count</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">Current Stock</label>
+            <input type="number" id="editInvStock" class="w-full border border-stone-300 rounded-lg p-2 font-bold outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">Reorder Threshold</label>
+            <input type="number" id="editInvThreshold" class="w-full border border-stone-300 rounded-lg p-2 font-bold outline-none">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t">
+        <button onclick="closeEditInventoryModal()" class="px-4 py-2 border border-stone-300 rounded-lg text-xs font-semibold text-stone-600 hover:bg-stone-100">Cancel</button>
+        <button onclick="submitEditInventory()" class="bg-amber-700 hover:bg-amber-600 text-white px-5 py-2 rounded-lg text-xs font-bold shadow">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Flavours Modal -->
+  <div id="manageFlavoursModal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl border border-stone-200">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="text-lg font-bold text-stone-900 font-serif-title">🍓 Manage Recipe Flavours / Varieties</h3>
+        <button onclick="closeManageFlavoursModal()" class="text-stone-400 hover:text-stone-600 text-lg">&times;</button>
+      </div>
+      <p class="text-xs text-stone-500">View and remove flavour varieties associated with this recipe.</p>
+      
+      <div id="currentFlavoursList" class="space-y-2 max-h-56 overflow-y-auto">
+        <!-- Rendered via JS -->
+      </div>
+
+      <div class="flex justify-end pt-2 border-t">
+        <button onclick="closeManageFlavoursModal()" class="px-4 py-2 bg-stone-200 hover:bg-stone-300 rounded-lg text-xs font-semibold text-stone-700">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restock Modal -->
+  <div id="restockModal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-stone-200">
+      <h3 class="text-lg font-bold text-stone-900 font-serif-title">➕ Restock Ingredient</h3>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Select Ingredient</label>
+          <select id="restockItemSelect" class="w-full border border-stone-300 rounded-lg p-2 bg-stone-50 outline-none"></select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Pack Size (g / ml / units)</label>
+            <input type="number" id="restockPackSize" class="w-full border border-stone-300 rounded-lg p-2 font-bold outline-none" placeholder="e.g. 1000">
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Number of Packs</label>
+            <input type="number" id="restockPackCount" class="w-full border border-stone-300 rounded-lg p-2 font-bold outline-none" value="1">
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeRestockModal()" class="px-4 py-2 border border-stone-300 rounded-lg text-xs font-semibold text-stone-600 hover:bg-stone-100">Cancel</button>
+        <button onclick="submitRestock()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-5 py-2 rounded-lg text-xs font-bold shadow">Add to Stock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Ingredient Modal -->
+  <div id="newIngredientModal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-stone-200">
+      <h3 class="text-lg font-bold text-stone-900 font-serif-title">+ Add New Ingredient to Inventory</h3>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Ingredient Name</label>
+          <input type="text" id="newIngName" class="w-full border border-stone-300 rounded-lg p-2 font-medium outline-none" placeholder="e.g. Callebaut Dark Callets">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Category</label>
+            <select id="newIngCategory" class="w-full border border-stone-300 rounded-lg p-2 bg-stone-50 outline-none">
+              <option value="Flours & Dry Ingredients">Flours & Dry</option>
+              <option value="Sugars & Sweeteners">Sugars</option>
+              <option value="Dairy & Fats">Dairy & Fats</option>
+              <option value="Fresh & Chilled">Fresh & Chilled</option>
+              <option value="Chocolate & Inclusions">Chocolate & Inclusions</option>
+              <option value="Specialty & Additives">Specialty / Additives</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Unit</label>
+            <select id="newIngUnit" class="w-full border border-stone-300 rounded-lg p-2 bg-stone-50 outline-none">
+              <option value="g">Grams (g)</option>
+              <option value="ml">Millilitres (ml)</option>
+              <option value="units">Units / Count</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Initial Stock</label>
+            <input type="number" id="newIngStock" class="w-full border border-stone-300 rounded-lg p-2 font-bold outline-none" value="1000">
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Low Alert Threshold</label>
+            <input type="number" id="newIngThreshold" class="w-full border border-stone-300 rounded-lg p-2 font-bold outline-none" value="500">
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeNewIngredientModal()" class="px-4 py-2 border border-stone-300 rounded-lg text-xs font-semibold text-stone-600 hover:bg-stone-100">Cancel</button>
+        <button onclick="submitNewIngredient()" class="bg-amber-700 hover:bg-amber-600 text-white px-5 py-2 rounded-lg text-xs font-bold shadow">Save Ingredient</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manual Recipe Writer Modal -->
+  <div id="newRecipeModal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-xl border border-stone-200 my-8">
+      <h3 class="text-xl font-bold text-stone-900 font-serif-title">✍️ Write New Commercial Recipe</h3>
+      <div class="space-y-4 text-xs">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Recipe Name</label>
+            <input type="text" id="manualRecipeName" class="w-full border border-stone-300 rounded-lg p-2 font-bold outline-none" placeholder="e.g. Signature Chocolate Brownies">
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Tin Sizes (Comma separated)</label>
+            <input type="text" id="manualTinSizes" class="w-full border border-stone-300 rounded-lg p-2 outline-none" value="1 Small Gastro, 3 Small Gastros">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Oven Temp</label>
+            <input type="text" id="manualOvenTemp" class="w-full border border-stone-300 rounded-lg p-2 outline-none" value="160°C Fan">
+          </div>
+          <div>
+            <label class="block font-semibold text-stone-700 mb-1">Bake Time</label>
+            <input type="text" id="manualBakeTime" class="w-full border border-stone-300 rounded-lg p-2 outline-none" value="25-30 mins">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Flavour Variations (Comma separated)</label>
+          <input type="text" id="manualFlavours" class="w-full border border-stone-300 rounded-lg p-2 outline-none" value="Classic / Triple Chocolate, Reese's Peanut Butter, Salted Caramel Fudge, Biscoff">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Ingredients for Primary Tin (Format: Ingredient, Qty, Unit - one per line)</label>
+          <textarea id="manualIngredientsText" rows="5" class="w-full border border-stone-300 rounded-lg p-2 font-mono outline-none" placeholder="Dark Chocolate, 325, g
+Butter, 312, g
+Cocoa Powder, 41, g
+Caster Sugar, 169, g
+Light Brown Sugar, 162, g
+Eggs, 5, units
+GF Plain Flour, 125, g
+Corn Flour, 10, g
+Toppings, 300, g"></textarea>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Method Steps (one step per line)</label>
+          <textarea id="manualMethodText" rows="4" class="w-full border border-stone-300 rounded-lg p-2 outline-none" placeholder="1. Melt dark chocolate and butter gently in microwave.
+2. Beat sugar and eggs until pale and glossy.
+3. Fold in dry flour and cocoa powder.
+4. Pour into lined gastro tin and bake at 160°C for 25-30 minutes."></textarea>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-stone-700 mb-1">Baker's Notes & Storage</label>
+          <textarea id="manualNotesText" rows="3" class="w-full border border-stone-300 rounded-lg p-2 outline-none" placeholder="Cool in fridge for 2 hours before slicing. Store up to 14 days."></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button onclick="closeNewRecipeModal()" class="px-4 py-2 border border-stone-300 rounded-lg text-xs font-semibold text-stone-600 hover:bg-stone-100">Cancel</button>
+        <button onclick="saveManualRecipe()" class="bg-amber-700 hover:bg-amber-600 text-white px-5 py-2 rounded-lg text-xs font-bold shadow">Save Recipe</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC IN JAVASCRIPT -->
+  <script>
+    // Master Inventory Initial State
+    let inventory = [
+      { id: 'ing_1', name: 'Butter', category: 'Dairy & Fats', stock: 1200, threshold: 1000, unit: 'g' },
+      { id: 'ing_2', name: 'Stork', category: 'Dairy & Fats', stock: 800, threshold: 1000, unit: 'g' },
+      { id: 'ing_3', name: 'Caster Sugar', category: 'Sugars & Sweeteners', stock: 1400, threshold: 1500, unit: 'g' },
+      { id: 'ing_4', name: 'Light Brown Sugar', category: 'Sugars & Sweeteners', stock: 2200, threshold: 1000, unit: 'g' },
+      { id: 'ing_5', name: 'GF Plain Flour', category: 'Flours & Dry Ingredients', stock: 3500, threshold: 1500, unit: 'g' },
+      { id: 'ing_6', name: 'GF Self-Raising Flour', category: 'Flours & Dry Ingredients', stock: 600, threshold: 1500, unit: 'g' },
+      { id: 'ing_7', name: 'Eggs', category: 'Fresh & Chilled', stock: 18, threshold: 12, unit: 'units' },
+      { id: 'ing_8', name: 'Dark Chocolate', category: 'Chocolate & Inclusions', stock: 1500, threshold: 1000, unit: 'g' },
+      { id: 'ing_9', name: 'Cocoa Powder', category: 'Flours & Dry Ingredients', stock: 300, threshold: 250, unit: 'g' },
+      { id: 'ing_10', name: 'Vegetable Glycerine', category: 'Specialty & Additives', stock: 40, threshold: 100, unit: 'ml' },
+      { id: 'ing_11', name: 'Potassium Sorbate', category: 'Specialty & Additives', stock: 35, threshold: 50, unit: 'g' },
+      { id: 'ing_12', name: 'Golden Syrup', category: 'Sugars & Sweeteners', stock: 1200, threshold: 500, unit: 'g' },
+      { id: 'ing_13', name: 'Corn Flour', category: 'Flours & Dry Ingredients', stock: 500, threshold: 200, unit: 'g' },
+      { id: 'ing_14', name: "Reese's Peanut Butter Cups", category: 'Chocolate & Inclusions', stock: 800, threshold: 300, unit: 'g' },
+      { id: 'ing_15', name: 'Fudge Pieces', category: 'Chocolate & Inclusions', stock: 600, threshold: 250, unit: 'g' },
+      { id: 'ing_16', name: 'White Chocolate Drops', category: 'Chocolate & Inclusions', stock: 750, threshold: 300, unit: 'g' }
+    ];
+
+    // Finished Shed Inventory Initial State
+    let shedStock = [
+      { id: 'shed_1', name: 'Triple Chocolate Brownie Slices', format: 'Retail Slice', price: 2.50, stock: 12 },
+      { id: 'shed_2', name: "Reese's Brownie Slices", format: 'Retail Slice', price: 3.00, stock: 8 },
+      { id: 'shed_3', name: 'Whole Brownie Tray (B2B)', format: 'Wholesale Tray', price: 38.00, stock: 2 }
+    ];
+
+    // Recipes Catalog starts EMPTY or with saved recipes
+    let recipes = [
+    {
+        "id": "rec_gf_plain_brownie",
+        "name": "Gluten Free Plain Chocolate Brownie",
+        "tinSizes": [
+            {
+                "name": "9-inch Square Tray Bake",
+                "scale": 1.0,
+                "defaultPortions": "16_retail",
+                "ingredients": [
+                    {
+                        "name": "Callebaut Dark Chocolate",
+                        "qty": 295,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Muller Salted Butter",
+                        "qty": 283,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Silver Spoon Caster Sugar",
+                        "qty": 123,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Tesco Cocoa Powder",
+                        "qty": 12,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Tate and Lyle Light Brown Sugar",
+                        "qty": 147,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Medium Eggs",
+                        "qty": 5,
+                        "unit": "units"
+                    },
+                    {
+                        "name": "Dove Farm Gluten-Free Plain Flour",
+                        "qty": 114,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Cornflour",
+                        "qty": 9,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Tesco Golden Syrup",
+                        "qty": 30,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Vegetable Glycerine",
+                        "qty": 6,
+                        "unit": "ml"
+                    }
+                ]
+            },
+            {
+                "name": "9\"x14\" Tray Bake",
+                "scale": 1.65,
+                "defaultPortions": "24_retail",
+                "ingredients": [
+                    {
+                        "name": "Callebaut Dark Chocolate",
+                        "qty": 488,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Muller Salted Butter",
+                        "qty": 468,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Tesco Cocoa Powder",
+                        "qty": 20,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Silver Spoon Caster Sugar",
+                        "qty": 204,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Tate and Lyle Light Brown Sugar",
+                        "qty": 243,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Medium Eggs",
+                        "qty": 8,
+                        "unit": "units"
+                    },
+                    {
+                        "name": "Dove Farm Gluten-Free Plain Flour",
+                        "qty": 188,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Cornflour",
+                        "qty": 15,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Tesco Golden Syrup",
+                        "qty": 50,
+                        "unit": "g"
+                    },
+                    {
+                        "name": "Vegetable Glycerine",
+                        "qty": 10,
+                        "unit": "ml"
+                    }
+                ]
+            }
+        ],
+        "flavours": [
+            {
+                "name": "Plain / Base (No Inclusions)",
+                "topping": "Pure unflavoured foundational batter (no added toppings)",
+                "deductGrams": 0,
+                "inclusionName": ""
+            },
+            {
+                "name": "Triple Chocolate",
+                "topping": "Callebaut Dark & Milk Chunks (200g) + White Drops (100g)",
+                "inclusions": [
+                    { "name": "Callebaut Dark & Milk Chocolate Chunks", "unit": "g", "weights": { "9-inch Square Tray Bake": 200, "9\"x14\" Tray Bake": 320 }, "grams": 200 },
+                    { "name": "White Chocolate Drops", "unit": "g", "weights": { "9-inch Square Tray Bake": 100, "9\"x14\" Tray Bake": 160 }, "grams": 100 }
+                ]
+            },
+            {
+                "name": "Reese's Peanut Butter",
+                "topping": "Reese's Peanut Butter Cups & Peanut Drops",
+                "deductGrams": 300,
+                "inclusionName": "Reese's Peanut Butter Cups"
+            },
+            {
+                "name": "Salted Caramel Fudge",
+                "topping": "Fudge Pieces & Caramel Swirl",
+                "deductGrams": 300,
+                "inclusionName": "Fudge Pieces"
+            },
+            {
+                "name": "Lotus Biscoff",
+                "topping": "Crushed Biscoff Biscuits & Warm Spread",
+                "deductGrams": 300,
+                "inclusionName": "Lotus Biscoff"
+            }
+        ],
+        "ovenTemp": "160\u00b0C Fan / 180\u00b0C Conventional",
+        "bakeTime": "20-22 mins (9-inch) / 25-30 mins (9x14\")",
+        "steps": [
+            "1. Melt the Base: In a large heatproof bowl set over simmering water (or in short microwave bursts), melt together Callebaut dark chocolate and butter until smooth and glossy.",
+            "2. Add Humectants: Remove from heat. Immediately stir in golden syrup and vegetable glycerine until incorporated. Let cool slightly until warm.",
+            "3. Whip Eggs & Sugar: In stand mixer, combine medium eggs, caster sugar, and light brown sugar. Whip vigorously for 3-5 minutes until doubled in volume, pale, and leaves ribbon trails.",
+            "4. Combine: Gently fold melted chocolate and butter mixture into whipped eggs until a uniform, glossy batter forms.",
+            "5. Fold Dry Ingredients: Sift together gluten-free plain flour, cornflour, and cocoa powder. Fold gently into wet batter using a spatula just until flour pockets disappear. Do not overmix.",
+            "6. Inclusions (Optional): If making a flavour variation, fold in chosen inclusions at this stage, reserving some for top decoration.",
+            "7. Bake: Pour batter into lined tin. Bake at 160\u00b0C Fan / 180\u00b0C Conventional for 20-22 mins (9-inch) or 25-30 mins (9x14\") until edges are firm and center has slight gentle wobble.",
+            "8. Stabilization: Remove from oven. Do not move or slice. Cool completely in tin at room temperature for 4-6 hours (ideally overnight) to allow chocolate and fats to recrystallize.",
+            "9. Sanitary Portioning: Lift slab out using parchment paper handles. Dip sharp chef's knife in boiling water and wipe dry between every cut to slice into precision portions.",
+            "10. Packaging: Place individual portions cleanly into high-barrier plastic bags with oxygen absorber (if shelf-life >3 weeks) and heat-seal immediately."
+        ],
+        "notesShelfLife": "\u2022 Ambient Shelf Life: 2 Weeks at room temperature away from sunlight in sealed pouches.\n\u2022 Fridge Storage: Up to 6 Weeks.\n\u2022 The Ambient Thaw Rule (CRUCIAL): If refrigerated, let sit sealed at room temp for 4 to 6 hours before opening bag to prevent condensation and mold.",
+        "notesHandling": "Line tins with parchment paper leaving overhang handles. For clean presentation, warm knife between cuts.",
+        "costing": {
+            "batchCost": 14.5,
+            "sliceSundry": 0.15,
+            "batchSundry": 0.8,
+            "opt1Slices": 16,
+            "opt1Price": 3.0,
+            "opt2Slices": 24,
+            "opt2Price": 2.5,
+            "b2bPrice": 38.0
+        }
+    }
+];
+    let currentRecipeId = null;
+    let currentMultiplier = 1;
+    let activeTinIndex = 0;
+    let activeFlavour = 'Plain / Base (No Inclusions)';
+    let parsedTempRecipe = null;
+
+    // Load LocalStorage if available
+        function resetCacheAndReload() {
+      if (confirm("Reset recipe cache and reload clean defaults? (Your Google Sheet Webhook URL will be kept)")) {
+        const hook = localStorage.getItem('googleSheetWebhookUrl');
+        localStorage.removeItem('abc_recipes');
+        localStorage.removeItem('abc_inventory');
+        localStorage.removeItem('abc_shedStock');
+        if (hook) localStorage.setItem('googleSheetWebhookUrl', hook);
+        location.reload();
+      }
+    }
+
+    // Load LocalStorage with auto-recovery and schema safety
+    function loadSavedState() {
+      try {
+        const savedInv = localStorage.getItem('abc_inventory');
+        if (savedInv) inventory = JSON.parse(savedInv);
+      } catch (e) {
+        console.warn('Inventory parse error:', e);
+      }
+
+      try {
+        const savedShed = localStorage.getItem('abc_shedStock');
+        if (savedShed) shedStock = JSON.parse(savedShed);
+      } catch (e) {
+        console.warn('Shed stock parse error:', e);
+      }
+
+      try {
+        const savedRec = localStorage.getItem('abc_recipes');
+        if (savedRec) {
+          const parsed = JSON.parse(savedRec);
+          // Auto-recover if older cached data has gastro fallbacks or invalid structures
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const hasGastro = parsed[0].tinSizes && parsed[0].tinSizes.some(t => (t.name || t).toLowerCase().includes('gastro'));
+            const isInvalid = !parsed[0].tinSizes || parsed[0].tinSizes.length === 0;
+            if (hasGastro || isInvalid) {
+              console.log('Migrating older cached recipes to clean PDF specifications...');
+              // keep default recipes
+              saveState();
+            } else {
+              recipes = parsed;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Recipes parse error:', e);
+      }
+
+      try {
+        const savedWebhook = localStorage.getItem('googleSheetWebhookUrl');
+        if (savedWebhook) {
+          const el = document.getElementById('sheetsWebhookUrlInput');
+          if (el) el.value = savedWebhook;
+        }
+      } catch (e) {}
+    }
+
+    function saveState() {
+      localStorage.setItem('abc_inventory', JSON.stringify(inventory));
+      localStorage.setItem('abc_shedStock', JSON.stringify(shedStock));
+      localStorage.setItem('abc_recipes', JSON.stringify(recipes));
+      updateAlertBadges();
+    }
+
+    // Tab Navigation
+    function switchTab(tabId) {
+      document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+      document.querySelectorAll('.nav-tab').forEach(b => {
+        b.classList.remove('active');
+        b.classList.add('text-stone-300');
+      });
+
+      const target = document.getElementById('tab-' + tabId);
+      const btn = document.getElementById('tabBtn-' + tabId);
+      if (target) target.classList.remove('hidden');
+      if (btn) {
+        btn.classList.add('active');
+        btn.classList.remove('text-stone-300');
+      }
+
+      if (tabId === 'inventory') renderInventoryTable();
+      if (tabId === 'shed') renderShedTable();
+      if (tabId === 'baking') onBakeTabOpened();
+      if (tabId === 'recipes') renderRecipesHub();
+    }
+
+    // Sub-tab Navigation (Ingredients, Method, Notes)
+    function switchRecipeSubTab(subId) {
+      document.getElementById('recipePage-ingredients').classList.add('hidden');
+      document.getElementById('recipePage-method').classList.add('hidden');
+      document.getElementById('recipePage-notes').classList.add('hidden');
+
+      document.querySelectorAll('.sub-tab').forEach(b => {
+        b.classList.remove('active');
+        b.classList.add('text-stone-400');
+      });
+
+      document.getElementById('recipePage-' + subId).classList.remove('hidden');
+      const activeBtn = document.getElementById('subTab-' + subId);
+      activeBtn.classList.add('active');
+      activeBtn.classList.remove('text-stone-400');
+    }
+
+    // ==================== RECIPES HUB LOGIC ====================
+    function renderRecipesHub() {
+      const select = document.getElementById('recipeSelect');
+      const emptyState = document.getElementById('emptyRecipeState');
+      const container = document.getElementById('activeRecipeContainer');
+      const headerBar = document.getElementById('recipeHeaderBar');
+
+      select.innerHTML = '';
+      if (recipes.length === 0) {
+        emptyState.classList.remove('hidden');
+        container.classList.add('hidden');
+        headerBar.classList.add('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      container.classList.remove('hidden');
+      headerBar.classList.remove('hidden');
+
+      recipes.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.id;
+        opt.textContent = r.name;
+        select.appendChild(opt);
+      });
+
+      if (!currentRecipeId || !recipes.find(r => r.id === currentRecipeId)) {
+        currentRecipeId = recipes[0].id;
+      }
+      select.value = currentRecipeId;
+      loadSelectedRecipe();
+    }
+
+    function loadSelectedRecipe() {
+      const select = document.getElementById('recipeSelect');
+      currentRecipeId = select.value;
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      if (!recipe) return;
+
+      document.getElementById('recipeTitle').textContent = recipe.name;
+      document.getElementById('recipeOvenTemp').textContent = recipe.ovenTemp || '160°C Fan';
+      document.getElementById('recipeBakeTime').textContent = recipe.bakeTime || '25-30 mins';
+
+      // Setup Tin Sizes Buttons (e.g. 1 Small Gastro vs 3 Small Gastros)
+      activeTinIndex = 0;
+      renderTinToggleButtons(recipe);
+
+      // Setup Flavour Dropdown (e.g. Triple Chocolate, Reese's, Fudge, Biscoff)
+      renderFlavourDropdown(recipe);
+
+      // Costing & Sundries inputs
+      document.getElementById('costBatchInput').value = (recipe.costing?.batchCost !== undefined ? recipe.costing.batchCost : 14.50).toFixed(2);
+      document.getElementById('costSliceSundryInput').value = (recipe.costing?.sliceSundry !== undefined ? recipe.costing.sliceSundry : 0.15).toFixed(2);
+      document.getElementById('costBatchSundryInput').value = (recipe.costing?.batchSundry !== undefined ? recipe.costing.batchSundry : 0.80).toFixed(2);
+      document.getElementById('costOpt1Slices').value = recipe.costing?.opt1Slices || 18;
+      document.getElementById('costOpt1Price').value = (recipe.costing?.opt1Price || 3.00).toFixed(2);
+      document.getElementById('costOpt2Slices').value = recipe.costing?.opt2Slices || 24;
+      document.getElementById('costOpt2Price').value = (recipe.costing?.opt2Price || 2.50).toFixed(2);
+      document.getElementById('costB2BPrice').value = (recipe.costing?.b2bPrice || 38.00).toFixed(2);
+
+      updatePricingCalculations();
+      renderRecipeIngredients();
+      renderRecipeMethod();
+      renderRecipeNotes();
+    }
+
+    // Render Tin Toggle Buttons
+    function renderTinToggleButtons(recipe) {
+      const group = document.getElementById('tinToggleButtonsGroup');
+      group.innerHTML = '';
+
+      const tinSizes = recipe.tinSizes && recipe.tinSizes.length > 0 ? recipe.tinSizes : ['1 Small Gastro', '3 Small Gastros'];
+
+      tinSizes.forEach((tin, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `tin-toggle px-3 py-1 rounded text-xs transition ${idx === activeTinIndex ? 'active' : 'text-stone-300 hover:text-white'}`;
+        btn.textContent = tin.name || tin;
+        btn.onclick = () => {
+          activeTinIndex = idx;
+          document.querySelectorAll('.tin-toggle').forEach((b, i) => {
+            if (i === activeTinIndex) b.className = 'tin-toggle px-3 py-1 rounded text-xs transition active';
+            else b.className = 'tin-toggle px-3 py-1 rounded text-xs transition text-stone-300 hover:text-white';
+          });
+          const tinName = tin.name || tin;
+          document.getElementById('recipeTinSizeDisplay').textContent = tinName;
+          document.getElementById('tableTinName').textContent = tinName;
+          renderRecipeIngredients();
+        };
+        group.appendChild(btn);
+      });
+
+      const activeTinObj = (tinSizes && tinSizes[activeTinIndex]) ? tinSizes[activeTinIndex] : (tinSizes && tinSizes[0] ? tinSizes[0] : { name: 'Standard Pan' });
+      const activeName = activeTinObj.name || activeTinObj;
+      document.getElementById('recipeTinSizeDisplay').textContent = activeName;
+      document.getElementById('tableTinName').textContent = activeName;
+    }
+
+    // Render Flavour Dropdown (Slot 0 is Pure Plain Base Recipe)
+    function renderFlavourDropdown(recipe) {
+      const sel = document.getElementById('recipeFlavourSelect');
+      sel.innerHTML = '';
+
+      const defaultFlavours = [
+        { name: 'Plain / Base (No Inclusions)', topping: 'Pure unflavoured foundational batter (no added toppings)', deductGrams: 0, inclusionName: '' },
+        { name: 'Triple Chocolate', topping: 'Callebaut Dark, Milk & White Chocolate Chunks', deductGrams: 300, inclusionName: 'Dark Chocolate' },
+        { name: "Reese's Peanut Butter", topping: "Reese's Peanut Butter Cups & Peanut Drops", deductGrams: 300, inclusionName: "Reese's Peanut Butter Cups" },
+        { name: 'Salted Caramel Fudge', topping: 'Fudge Pieces & Caramel Swirl', deductGrams: 300, inclusionName: 'Fudge Pieces' },
+        { name: 'Lotus Biscoff', topping: 'Crushed Biscoff Biscuits & Warm Spread', deductGrams: 300, inclusionName: 'Lotus Biscoff' }
+      ];
+
+      const flavours = recipe.flavours && recipe.flavours.length > 0 ? recipe.flavours : defaultFlavours;
+      recipe.flavours = flavours;
+
+      flavours.forEach((f) => {
+        const opt = document.createElement('option');
+        opt.value = f.name;
+        opt.textContent = f.name;
+        sel.appendChild(opt);
+      });
+
+      if (!activeFlavour || !flavours.find(f => f.name === activeFlavour)) {
+        activeFlavour = flavours[0].name;
+      }
+      sel.value = activeFlavour;
+      document.getElementById('activeFlavourTag').textContent = activeFlavour;
+      document.getElementById('flavourNoteText').textContent = activeFlavour === 'Plain / Base (No Inclusions)' 
+        ? 'Pure foundational batter — select a flavour to overlay inclusions' 
+        : `Topping applied: ${(flavours.find(f => f.name === activeFlavour)?.topping || '')}`;
+    }
+
+    function changeFlavourSelection() {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      const selVal = document.getElementById('recipeFlavourSelect').value;
+      activeFlavour = selVal;
+      document.getElementById('activeFlavourTag').textContent = selVal;
+
+      const fObj = recipe.flavours?.find(f => f.name === selVal);
+      document.getElementById('flavourNoteText').textContent = fObj ? `Topping applied: ${fObj.topping}` : `Selected: ${selVal}`;
+      renderRecipeIngredients();
+    }
+
+    function updatePricingCalculations() {
+      const ingCost = parseFloat(document.getElementById('costBatchInput').value) || 0;
+      const sliceSundry = parseFloat(document.getElementById('costSliceSundryInput').value) || 0;
+      const batchBoxCost = parseFloat(document.getElementById('costBatchSundryInput').value) || 0;
+      
+      // Option 1
+      const s1 = parseInt(document.getElementById('costOpt1Slices').value) || 18;
+      const p1 = parseFloat(document.getElementById('costOpt1Price').value) || 3.00;
+      const sundryTotal1 = (s1 * sliceSundry) + batchBoxCost;
+      const totalCost1 = ingCost + sundryTotal1;
+      const rev1 = s1 * p1;
+      const prof1 = rev1 - totalCost1;
+      const m1 = rev1 > 0 ? (prof1 / rev1) * 100 : 0;
+      document.getElementById('costOpt1TotalCostTag').textContent = `Total Cost: £${totalCost1.toFixed(2)}`;
+      document.getElementById('costOpt1Summary').innerHTML = 
+        `<div class="flex justify-between text-[10px] text-stone-500 mb-1">
+           <span>Sundries: £${sundryTotal1.toFixed(2)} (£${(sundryTotal1/s1).toFixed(2)}/slice)</span>
+           <span>Unit Cost: £${(totalCost1/s1).toFixed(2)}</span>
+         </div>
+         <div class="flex justify-between items-center">
+           <span>Rev: £${rev1.toFixed(2)}</span>
+           <span class="${prof1 >= 0 ? 'text-emerald-700 font-bold' : 'text-red-700 font-bold'}">Profit: £${prof1.toFixed(2)} (${m1.toFixed(1)}%)</span>
+         </div>`;
+
+      // Option 2
+      const s2 = parseInt(document.getElementById('costOpt2Slices').value) || 24;
+      const p2 = parseFloat(document.getElementById('costOpt2Price').value) || 2.50;
+      const sundryTotal2 = (s2 * sliceSundry) + batchBoxCost;
+      const totalCost2 = ingCost + sundryTotal2;
+      const rev2 = s2 * p2;
+      const prof2 = rev2 - totalCost2;
+      const m2 = rev2 > 0 ? (prof2 / rev2) * 100 : 0;
+      document.getElementById('costOpt2TotalCostTag').textContent = `Total Cost: £${totalCost2.toFixed(2)}`;
+      document.getElementById('costOpt2Summary').innerHTML = 
+        `<div class="flex justify-between text-[10px] text-stone-500 mb-1">
+           <span>Sundries: £${sundryTotal2.toFixed(2)} (£${(sundryTotal2/s2).toFixed(2)}/slice)</span>
+           <span>Unit Cost: £${(totalCost2/s2).toFixed(2)}</span>
+         </div>
+         <div class="flex justify-between items-center">
+           <span>Rev: £${rev2.toFixed(2)}</span>
+           <span class="${prof2 >= 0 ? 'text-emerald-700 font-bold' : 'text-red-700 font-bold'}">Profit: £${prof2.toFixed(2)} (${m2.toFixed(1)}%)</span>
+         </div>`;
+
+      // B2B Wholesale Whole Tray (Uses wholesale box/board, no retail slice bags)
+      const pB2B = parseFloat(document.getElementById('costB2BPrice').value) || 38.00;
+      const totalCostB2B = ingCost + batchBoxCost;
+      const profB2B = pB2B - totalCostB2B;
+      const mB2B = pB2B > 0 ? (profB2B / pB2B) * 100 : 0;
+      document.getElementById('costB2BTotalCostTag').textContent = `Total Cost: £${totalCostB2B.toFixed(2)}`;
+      document.getElementById('costB2BSummary').innerHTML = 
+        `<div class="flex justify-between text-[10px] text-amber-700 mb-1">
+           <span>Tray Box / Board: £${batchBoxCost.toFixed(2)}</span>
+           <span>Raw Ings: £${ingCost.toFixed(2)}</span>
+         </div>
+         <div class="flex justify-between items-center">
+           <span>Rev: £${pB2B.toFixed(2)}</span>
+           <span class="${profB2B >= 0 ? 'text-emerald-700 font-bold' : 'text-red-700 font-bold'}">Profit: £${profB2B.toFixed(2)} (${mB2B.toFixed(1)}%)</span>
+         </div>`;
+    }
+
+    function saveCostingEdits() {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      if (!recipe) return;
+
+      recipe.costing = {
+        batchCost: parseFloat(document.getElementById('costBatchInput').value) || 0,
+        sliceSundry: parseFloat(document.getElementById('costSliceSundryInput').value) || 0,
+        batchSundry: parseFloat(document.getElementById('costBatchSundryInput').value) || 0,
+        opt1Slices: parseInt(document.getElementById('costOpt1Slices').value) || 18,
+        opt1Price: parseFloat(document.getElementById('costOpt1Price').value) || 3.00,
+        opt2Slices: parseInt(document.getElementById('costOpt2Slices').value) || 24,
+        opt2Price: parseFloat(document.getElementById('costOpt2Price').value) || 2.50,
+        b2bPrice: parseFloat(document.getElementById('costB2BPrice').value) || 38.00
+      };
+
+      saveState();
+      alert('Costing, packaging sundries, and selling prices saved!');
+    }
+
+    function setMultiplier(mult) {
+      currentMultiplier = mult;
+      document.querySelectorAll('.scale-btn').forEach(btn => {
+        if (parseFloat(btn.dataset.mult) === mult) {
+          btn.className = "scale-btn active px-2.5 py-1 bg-amber-700 text-white rounded font-bold";
+        } else {
+          btn.className = "scale-btn px-2.5 py-1 border border-stone-300 rounded font-bold hover:bg-stone-100";
+        }
+      });
+      renderRecipeIngredients();
+    }
+
+    // Get ingredients based on active tin size toggle
+    function getActiveTinIngredients(recipe) {
+      if (!recipe) return [];
+
+      if (recipe.tinSizes && recipe.tinSizes[activeTinIndex] && recipe.tinSizes[activeTinIndex].ingredients) {
+        return recipe.tinSizes[activeTinIndex].ingredients;
+      }
+
+      const baseIngredients = recipe.ingredients || [];
+      const tinRatio = (activeTinIndex === 1 && (!recipe.tinSizes || !recipe.tinSizes[1]?.ingredients)) ? 1.65 : 1;
+
+      return baseIngredients.map(ing => ({
+        ...ing,
+        qty: ing.qty * tinRatio
+      }));
+    }
+
+    function renderRecipeIngredients() {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      const tbody = document.getElementById('recipeIngredientsBody');
+      tbody.innerHTML = '';
+      if (!recipe) return;
+
+      const activeIngredients = getActiveTinIngredients(recipe);
+
+      // 1. Render Pure Base Batter Ingredients
+      activeIngredients.forEach((ing) => {
+        if (ing.name.toLowerCase() === 'toppings' || ing.name.toLowerCase() === 'topping') return;
+
+        const scaledQty = ing.qty * currentMultiplier;
+        const matchingStock = inventory.find(inv => inv.name.toLowerCase() === ing.name.toLowerCase());
+        const hasEnough = matchingStock ? (matchingStock.stock >= scaledQty) : false;
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-stone-50 transition";
+        tr.innerHTML = `
+          <td class="p-3"><input type="checkbox" class="w-4 h-4 rounded text-amber-700 focus:ring-amber-500"></td>
+          <td class="p-3 font-semibold text-stone-900">${ing.name}</td>
+          <td class="p-3 text-stone-600">${ing.qty} ${ing.unit}</td>
+          <td class="p-3 font-bold text-amber-900">${scaledQty.toFixed(scaledQty % 1 === 0 ? 0 : 1)} ${ing.unit}</td>
+          <td class="p-3">
+            ${matchingStock 
+              ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold ${hasEnough ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+                   ${matchingStock.stock} ${matchingStock.unit} on hand (${hasEnough ? 'Sufficient' : 'Short'})
+                 </span>`
+              : `<span class="px-2 py-0.5 rounded text-[11px] bg-stone-100 text-stone-600">Untracked</span>`
+            }
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // 2. Overlay MULTIPLE Flavour Inclusions with individual weights
+      if (activeFlavour && activeFlavour !== 'Plain / Base (No Inclusions)') {
+        const flavObj = recipe.flavours?.find(f => f.name === activeFlavour);
+        if (flavObj) {
+          const tinRatio = (activeTinIndex === 1 && (!recipe.tinSizes || !recipe.tinSizes[1]?.ingredients)) ? 1.65 : 1;
+          const incList = (flavObj.inclusions && flavObj.inclusions.length > 0)
+            ? flavObj.inclusions
+            : (flavObj.deductGrams ? [{ name: flavObj.inclusionName || flavObj.topping || flavObj.name, grams: flavObj.deductGrams, unit: 'g' }] : []);
+
+          const activeTinName = (recipe.tinSizes && recipe.tinSizes[activeTinIndex]) ? (recipe.tinSizes[activeTinIndex].name || recipe.tinSizes[activeTinIndex]) : 'Base Pan';
+
+          incList.forEach(inc => {
+            const panGrams = getInclusionGramsForTin(inc, activeTinName, tinRatio);
+            const scaledGrams = panGrams * currentMultiplier;
+            const matchItem = inventory.find(i => i.name.toLowerCase().includes(inc.name.toLowerCase()));
+            const hasEnough = matchItem ? (matchItem.stock >= scaledGrams) : false;
+
+            const trFlav = document.createElement('tr');
+            trFlav.className = "bg-amber-50/80 border-t-2 border-amber-300 font-medium";
+            trFlav.innerHTML = `
+              <td class="p-3"><input type="checkbox" class="w-4 h-4 rounded text-amber-700 focus:ring-amber-500"></td>
+              <td class="p-3 font-bold text-amber-950 flex items-center gap-1.5">
+                <span>✨</span> ${inc.name}
+              </td>
+              <td class="p-3 text-stone-600 font-bold">${panGrams.toFixed(0)} ${inc.unit || 'g'}</td>
+              <td class="p-3 font-bold text-amber-900">${scaledGrams.toFixed(scaledGrams % 1 === 0 ? 0 : 1)} ${inc.unit || 'g'}</td>
+              <td class="p-3">
+                ${matchItem 
+                  ? `<span class="px-2 py-0.5 rounded text-[11px] font-bold ${hasEnough ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+                       ${matchItem.stock} ${matchItem.unit} on hand (${hasEnough ? 'Sufficient' : 'Short'})
+                     </span>`
+                  : `<span class="px-2 py-0.5 rounded text-[11px] bg-amber-100 text-amber-800 font-semibold">Specialty Inclusion</span>`
+                }
+              </td>
+            `;
+            tbody.appendChild(trFlav);
+          });
+        }
+      }
+    }
+
+    function renderRecipeMethod() {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      const list = document.getElementById('methodStepsList');
+      list.innerHTML = '';
+      if (!recipe || !recipe.steps) return;
+
+      recipe.steps.forEach((step, idx) => {
+        const div = document.createElement('div');
+        div.className = "flex items-start gap-4 p-4 rounded-xl border border-stone-200 bg-stone-50/70 hover:bg-stone-50 transition";
+        div.innerHTML = `
+          <span class="w-7 h-7 rounded-full bg-amber-700 text-white font-bold flex items-center justify-center shrink-0 text-xs">${idx + 1}</span>
+          <div class="flex-1 space-y-1">
+            <p class="text-sm text-stone-800 leading-relaxed">${step}</p>
+          </div>
+          <input type="checkbox" class="w-5 h-5 rounded text-emerald-600 mt-1 cursor-pointer">
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function renderRecipeNotes() {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      if (!recipe) return;
+
+      document.getElementById('notesShelfLife').innerHTML = recipe.notesShelfLife || '<p class="text-stone-500 italic">No shelf life notes specified.</p>';
+      document.getElementById('notesHandling').innerHTML = recipe.notesHandling || '<p class="text-stone-500 italic">Standard baking instructions apply.</p>';
+
+      let variationsHtml = '<ul class="list-disc pl-4 space-y-1">';
+      if (recipe.flavours && recipe.flavours.length > 0) {
+        recipe.flavours.forEach(f => {
+          variationsHtml += `<li><strong>${f.name}:</strong> ${f.topping}</li>`;
+        });
+      } else {
+        variationsHtml += '<li>Standard flavour variations.</li>';
+      }
+      variationsHtml += '</ul>';
+      document.getElementById('notesVariations').innerHTML = variationsHtml;
+    }
+
+    function deleteCurrentRecipe() {
+      if (!currentRecipeId) return;
+      if (confirm('Are you sure you want to delete this recipe from your catalog?')) {
+        recipes = recipes.filter(r => r.id !== currentRecipeId);
+        saveState();
+        renderRecipesHub();
+      }
+    }
+
+    function openBakeFromCurrentRecipe() {
+      switchTab('baking');
+    }
+
+    // ==================== I AM BAKING LOGIC ====================
+    function onBakeTabOpened() {
+      const select = document.getElementById('bakeSelectRecipe');
+      select.innerHTML = '';
+
+      if (recipes.length === 0) {
+        select.innerHTML = '<option value="">No recipes available</option>';
+        document.getElementById('bakeDeductionPreviewBody').innerHTML = '<tr><td colspan="5" class="p-4 text-center text-stone-500">Add or import a recipe first.</td></tr>';
+        return;
+      }
+
+      recipes.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.id;
+        opt.textContent = r.name;
+        select.appendChild(opt);
+      });
+
+      if (currentRecipeId) select.value = currentRecipeId;
+      onBakeRecipeChange();
+    }
+
+    function onBakeRecipeChange() {
+      const recipeSelect = document.getElementById('bakeSelectRecipe');
+      const recipe = recipes.find(r => r.id === recipeSelect.value);
+      if (!recipe) return;
+
+      // Populate Flavours
+      const flavSel = document.getElementById('bakeSelectFlavour');
+      flavSel.innerHTML = '';
+      const flavours = recipe.flavours && recipe.flavours.length > 0
+        ? recipe.flavours
+        : [{ name: 'Classic / Triple Chocolate' }, { name: "Reese's Peanut Butter" }, { name: 'Salted Caramel Fudge' }];
+
+      flavours.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.name;
+        opt.textContent = f.name;
+        flavSel.appendChild(opt);
+      });
+
+      // Populate Tin Sizes
+      const tinSel = document.getElementById('bakeSelectTin');
+      tinSel.innerHTML = '';
+      const tinSizes = recipe.tinSizes && recipe.tinSizes.length > 0 ? recipe.tinSizes : ['1 Small Gastro', '3 Small Gastros'];
+
+      tinSizes.forEach((tin, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = tin.name || tin;
+        tinSel.appendChild(opt);
+      });
+
+      renderBakeDeductionPreview();
+    }
+
+    function onPortionPresetChange() {
+      const preset = document.getElementById('bakePortionPresetSelect').value;
+      const countInput = document.getElementById('bakePortionsGot');
+      const typeSelect = document.getElementById('bakeYieldType');
+
+      if (preset === '1_b2b') {
+        countInput.value = 1;
+        typeSelect.value = 'b2b';
+      } else if (preset === 'custom') {
+        // keep whatever count is typed
+      } else {
+        const num = parseInt(preset.split('_')[0]) || 18;
+        countInput.value = num;
+        typeSelect.value = 'retail';
+      }
+      renderBakeDeductionPreview();
+    }
+
+    function onCustomPortionInput() {
+      document.getElementById('bakePortionPresetSelect').value = 'custom';
+    }
+
+    function renderBakeDeductionPreview() {
+      const select = document.getElementById('bakeSelectRecipe');
+      const recipe = recipes.find(r => r.id === select.value);
+      const tinIdx = parseInt(document.getElementById('bakeSelectTin').value) || 0;
+      const flavName = document.getElementById('bakeSelectFlavour').value;
+      const tbody = document.getElementById('bakeDeductionPreviewBody');
+      tbody.innerHTML = '';
+
+      if (!recipe) return;
+
+      // Determine active tin ingredients
+      let ingredientsToDeduct = [];
+      if (recipe.tinSizes && recipe.tinSizes[tinIdx] && recipe.tinSizes[tinIdx].ingredients) {
+        ingredientsToDeduct = JSON.parse(JSON.stringify(recipe.tinSizes[tinIdx].ingredients));
+      } else {
+        const ratio = (tinIdx === 1) ? 3 : 1;
+        ingredientsToDeduct = (recipe.ingredients || []).map(i => ({ ...i, qty: i.qty * ratio }));
+      }
+
+      // Add multiple flavour inclusions if flavoured variety is chosen
+      const tinMult = (tinIdx === 1 && (!recipe.tinSizes || !recipe.tinSizes[1]?.ingredients)) ? 1.65 : 1;
+      if (flavName && !flavName.toLowerCase().includes("plain") && !flavName.toLowerCase().includes("base")) {
+        const flavObj = recipe.flavours?.find(f => f.name === flavName);
+        if (flavObj) {
+          const incList = (flavObj.inclusions && flavObj.inclusions.length > 0)
+            ? flavObj.inclusions
+            : (flavObj.deductGrams ? [{ name: flavObj.inclusionName || flavObj.topping || flavObj.name, grams: flavObj.deductGrams, unit: 'g' }] : []);
+
+          const targetTinName = (recipe.tinSizes && recipe.tinSizes[tinIdx]) ? (recipe.tinSizes[tinIdx].name || recipe.tinSizes[tinIdx]) : 'Base Pan';
+          incList.forEach(inc => {
+            const panGrams = getInclusionGramsForTin(inc, targetTinName, tinMult);
+            ingredientsToDeduct.push({ name: inc.name, qty: panGrams, unit: inc.unit || 'g' });
+          });
+        }
+      }
+
+      ingredientsToDeduct.forEach(ing => {
+        const deductQty = ing.qty;
+        const stockItem = inventory.find(i => i.name.toLowerCase() === ing.name.toLowerCase());
+        const currentQty = stockItem ? stockItem.stock : 0;
+        const afterQty = currentQty - deductQty;
+        const isDeficit = afterQty < 0;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-2.5 font-semibold text-stone-800">${ing.name}</td>
+          <td class="p-2.5 font-bold text-red-700">-${deductQty} ${ing.unit}</td>
+          <td class="p-2.5 text-stone-600">${currentQty} ${ing.unit}</td>
+          <td class="p-2.5 font-bold ${isDeficit ? 'text-red-600' : 'text-stone-800'}">${afterQty} ${ing.unit}</td>
+          <td class="p-2.5">
+            ${isDeficit 
+              ? `<span class="bg-red-100 text-red-800 px-2 py-0.5 rounded text-[10px] font-bold">⚠️ Insufficient</span>`
+              : `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">OK</span>`
+            }
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function confirmAndExecuteBake() {
+      const recipeSelect = document.getElementById('bakeSelectRecipe');
+      const recipe = recipes.find(r => r.id === recipeSelect.value);
+      if (!recipe) return alert('Please select a valid recipe first.');
+
+      const tinIdx = parseInt(document.getElementById('bakeSelectTin').value) || 0;
+      const flavName = document.getElementById('bakeSelectFlavour').value;
+      const yieldType = document.getElementById('bakeYieldType').value;
+      const portionCount = parseInt(document.getElementById('bakePortionsGot').value) || 1;
+
+      // Determine active tin ingredients
+      let ingredientsToDeduct = [];
+      if (recipe.tinSizes && recipe.tinSizes[tinIdx] && recipe.tinSizes[tinIdx].ingredients) {
+        ingredientsToDeduct = JSON.parse(JSON.stringify(recipe.tinSizes[tinIdx].ingredients));
+      } else {
+        const ratio = (tinIdx === 1) ? 3 : 1;
+        ingredientsToDeduct = (recipe.ingredients || []).map(i => ({ ...i, qty: i.qty * ratio }));
+      }
+
+      // Add multiple flavour inclusions for bake deduction
+      const tinMult = (tinIdx === 1 && (!recipe.tinSizes || !recipe.tinSizes[1]?.ingredients)) ? 1.65 : 1;
+      if (flavName && !flavName.toLowerCase().includes("plain") && !flavName.toLowerCase().includes("base")) {
+        const flavObj = recipe.flavours?.find(f => f.name === flavName);
+        if (flavObj) {
+          const incList = (flavObj.inclusions && flavObj.inclusions.length > 0)
+            ? flavObj.inclusions
+            : (flavObj.deductGrams ? [{ name: flavObj.inclusionName || flavObj.topping || flavObj.name, grams: flavObj.deductGrams, unit: 'g' }] : []);
+
+          const targetTinName = (recipe.tinSizes && recipe.tinSizes[tinIdx]) ? (recipe.tinSizes[tinIdx].name || recipe.tinSizes[tinIdx]) : 'Base Pan';
+          incList.forEach(inc => {
+            const panGrams = getInclusionGramsForTin(inc, targetTinName, tinMult);
+            ingredientsToDeduct.push({ name: inc.name, qty: panGrams, unit: inc.unit || 'g' });
+          });
+        }
+      }
+
+      // Deduct from Raw Inventory
+      ingredientsToDeduct.forEach(ing => {
+        let stockItem = inventory.find(i => i.name.toLowerCase() === ing.name.toLowerCase());
+        if (stockItem) {
+          stockItem.stock = Math.max(0, stockItem.stock - ing.qty);
+        }
+      });
+
+      // Credit to Shed / Finished Stock
+      const formatLabel = yieldType === 'retail' ? 'Retail Slice' : 'Wholesale Tray';
+      const productName = `${flavName} ${recipe.name} (${yieldType === 'retail' ? 'Slices' : 'Whole Tray'})`;
+      let shedItem = shedStock.find(s => s.name === productName);
+
+      if (shedItem) {
+        shedItem.stock += portionCount;
+      } else {
+        const defaultPrice = yieldType === 'retail' 
+          ? (recipe.costing?.opt1Price || 2.50) 
+          : (recipe.costing?.b2bPrice || 38.00);
+        shedStock.push({
+          id: 'shed_' + Date.now(),
+          name: productName,
+          format: formatLabel,
+          price: defaultPrice,
+          stock: portionCount
+        });
+      }
+
+      saveState();
+
+      // Check if low stock triggers webhook sync
+      checkAndTriggerSheetSync();
+
+      alert(`Bake confirmed! Deducted ingredients for ${flavName} ${recipe.name} and credited ${portionCount} ${formatLabel}s to shed stock.`);
+      switchTab('inventory');
+    }
+
+    // ==================== RAW INVENTORY (WITH DIRECT EDITABLE INPUT) ====================
+    function renderInventoryTable() {
+      const tbody = document.getElementById('inventoryTableBody');
+      const search = document.getElementById('inventorySearchInput').value.toLowerCase();
+      const cat = document.getElementById('inventoryCategoryFilter').value;
+      tbody.innerHTML = '';
+
+      inventory.forEach(item => {
+        if (cat !== 'all' && item.category !== cat) return;
+        if (search && !item.name.toLowerCase().includes(search)) return;
+
+        const isLow = item.stock <= item.threshold;
+        const pct = Math.min(100, Math.round((item.stock / (item.threshold * 2)) * 100));
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-stone-50 transition";
+        tr.innerHTML = `
+          <td class="p-3 font-semibold text-stone-900 flex items-center gap-2">
+            ${isLow ? '<span class="text-red-500 font-bold">⚠️</span>' : ''} ${item.name}
+          </td>
+          <td class="p-3 text-stone-500 text-xs">${item.category}</td>
+          
+          <!-- DIRECT EDITABLE STOCK CELL -->
+          <td class="p-3">
+            <div class="flex items-center gap-1">
+              <input type="number" value="${item.stock}" onchange="updateDirectItemStock('${item.id}', this.value)" class="w-24 border border-stone-300 rounded px-2 py-1 text-xs font-bold text-stone-900 bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+              <span class="text-xs text-stone-500 font-medium">${item.unit}</span>
+            </div>
+          </td>
+
+          <!-- THRESHOLD CELL -->
+          <td class="p-3 text-stone-600 text-xs">
+            <input type="number" value="${item.threshold}" onchange="updateItemThreshold('${item.id}', this.value)" class="w-20 border border-stone-200 rounded px-1.5 py-0.5 text-xs font-bold text-center">
+            ${item.unit}
+          </td>
+          <td class="p-3">
+            <div class="w-32 bg-stone-200 rounded-full h-2 overflow-hidden">
+              <div class="${isLow ? 'bg-red-500' : 'bg-emerald-500'} h-2 rounded-full" style="width: ${pct}%"></div>
+            </div>
+          </td>
+          <td class="p-3 text-right whitespace-nowrap">
+            <button onclick="quickAddStock('${item.id}', 500)" class="text-[11px] bg-stone-100 hover:bg-stone-200 border border-stone-300 px-2 py-1 rounded font-semibold text-stone-700 transition">+500</button>
+            <button onclick="openEditInventoryModal('${item.id}')" class="text-[11px] bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-2 py-1 rounded font-bold transition ml-1">✏️ Edit</button>
+            <button onclick="deleteInventoryItem('${item.id}')" class="text-[11px] text-red-600 hover:text-red-800 ml-1.5 font-medium">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      updateAlertBadges();
+    }
+
+    function updateDirectItemStock(id, val) {
+      const item = inventory.find(i => i.id === id);
+      if (item) {
+        item.stock = parseFloat(val) || 0;
+        saveState();
+        updateAlertBadges();
+      }
+    }
+
+    function updateItemThreshold(id, val) {
+      const item = inventory.find(i => i.id === id);
+      if (item) {
+        item.threshold = parseFloat(val) || 0;
+        saveState();
+        renderInventoryTable();
+      }
+    }
+
+    function quickAddStock(id, amount) {
+      const item = inventory.find(i => i.id === id);
+      if (item) {
+        item.stock += amount;
+        saveState();
+        renderInventoryTable();
+      }
+    }
+
+    function deleteInventoryItem(id) {
+      if (confirm('Delete this item from inventory?')) {
+        inventory = inventory.filter(i => i.id !== id);
+        saveState();
+        renderInventoryTable();
+      }
+    }
+
+    function updateAlertBadges() {
+      const lowItems = inventory.filter(i => i.stock <= i.threshold);
+      const headerBadge = document.getElementById('lowStockHeaderBadge');
+      const headerText = document.getElementById('lowStockCountText');
+      const alertBanner = document.getElementById('reorderAlertBanner');
+      const itemsList = document.getElementById('lowStockItemsList');
+
+      if (lowItems.length > 0) {
+        headerBadge.classList.remove('hidden');
+        headerText.textContent = `${lowItems.length} Low Stock Alert${lowItems.length > 1 ? 's' : ''}`;
+        alertBanner.classList.remove('hidden');
+        itemsList.innerHTML = '';
+
+        lowItems.forEach(i => {
+          const badge = document.createElement('span');
+          badge.className = "bg-red-100 text-red-800 border border-red-300 font-bold px-3 py-1 rounded-lg text-xs flex items-center gap-1.5 shadow-sm";
+          badge.innerHTML = `<span>⚠️</span> ${i.name}: ${i.stock} ${i.unit} (Min: ${i.threshold} ${i.unit})`;
+          itemsList.appendChild(badge);
+        });
+      } else {
+        headerBadge.classList.add('hidden');
+        alertBanner.classList.add('hidden');
+      }
+    }
+
+    function copyRestockList() {
+      const lowItems = inventory.filter(i => i.stock <= i.threshold);
+      if (lowItems.length === 0) return alert('No items are currently low on stock.');
+
+      let text = "Ashlie Bakes Cakes — Reorder Shopping List:\n";
+      lowItems.forEach(i => {
+        const deficit = i.threshold - i.stock;
+        text += `- ${i.name}: Current: ${i.stock}${i.unit} | Min Needed: ${i.threshold}${i.unit} (Order at least ${deficit}${i.unit})\n`;
+      });
+
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Reorder list copied to clipboard!');
+      });
+    }
+
+    // ==================== SHED INVENTORY ====================
+    function renderShedTable() {
+      const tbody = document.getElementById('shedTableBody');
+      tbody.innerHTML = '';
+
+      shedStock.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-stone-50 transition";
+        tr.innerHTML = `
+          <td class="p-3 font-semibold text-stone-900">${item.name}</td>
+          <td class="p-3 text-stone-500 text-xs">${item.format}</td>
+          <td class="p-3 font-bold text-amber-900">£${item.price.toFixed(2)}</td>
+          <td class="p-3 font-bold text-stone-800">${item.stock}</td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded text-xs font-bold ${item.stock > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+              ${item.stock > 0 ? 'In Shed Display' : 'Sold Out'}
+            </span>
+          </td>
+          <td class="p-3 text-right">
+            <button onclick="decrementShed('${item.id}')" class="bg-stone-100 hover:bg-stone-200 border border-stone-300 px-3 py-1 rounded font-bold text-stone-700 transition">-1 Sold</button>
+            <button onclick="incrementShed('${item.id}')" class="bg-stone-100 hover:bg-stone-200 border border-stone-300 px-3 py-1 rounded font-bold text-stone-700 ml-1 transition">+1</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function decrementShed(id) {
+      const item = shedStock.find(s => s.id === id);
+      if (item && item.stock > 0) {
+        item.stock--;
+        saveState();
+        renderShedTable();
+      }
+    }
+
+    function incrementShed(id) {
+      const item = shedStock.find(s => s.id === id);
+      if (item) {
+        item.stock++;
+        saveState();
+        renderShedTable();
+      }
+    }
+
+    // ==================== SMART MULTI-TIN DOCUMENT PARSER ====================
+    function handleFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      const ext = file.name.split('.').pop().toLowerCase();
+
+      if (ext === 'docx') {
+        reader.onload = function(evt) {
+          mammoth.extractRawText({ arrayBuffer: evt.target.result })
+            .then(res => parseMultiTinRecipeText(res.value, file.name));
+        };
+        reader.readAsArrayBuffer(file);
+      } else if (ext === 'pdf') {
+        reader.onload = function(evt) {
+          const typedarray = new Uint8Array(evt.target.result);
+          pdfjsLib.getDocument(typedarray).promise.then(pdf => {
+            let fullText = '';
+            let count = pdf.numPages;
+            for (let i = 1; i <= count; i++) {
+              pdf.getPage(i).then(page => {
+                page.getTextContent().then(tc => {
+                  fullText += tc.items.map(item => item.str).join(' ') + '\n';
+                  if (i === count) parseMultiTinRecipeText(fullText, file.name);
+                });
+              });
+            }
+          });
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        reader.onload = function(evt) {
+          parseMultiTinRecipeText(evt.target.result, file.name);
+        };
+        reader.readAsText(file);
+      }
+    }
+
+    function parseRawText() {
+      const text = document.getElementById('rawRecipeTextInput').value;
+      if (!text.trim()) return alert('Please paste some recipe text first.');
+      parseMultiTinRecipeText(text, 'Manual Brownie Recipe');
+    }
+
+    function insertSampleBrownieText() {
+      document.getElementById('rawRecipeTextInput').value = 
+`Chocolate brownie my recipe
+
+Tin Sizes:
+1 small gastro:
+325 Grams dark chocolate
+41 Grams cocoa powder
+312 Grams Butter
+169 Grams caster sugar
+162 Grams light brown sugar
+5 eggs
+125 Grams gluten free plain flour
+10 Grams corn flour
+300 G toppings
+
+3 small gastros:
+775 Grams dark chocolate
+100 Grams cocoa powder
+750 Grams Butter
+410 Grams caster sugar
+390 Grams Light brown sugar
+12 eggs
+300 Grams gluten free plain flour
+24 Grams corn flour
+900 Grams topping
+
+Flavours:
+Triple Chocolate: 300g Callebaut dark, milk & white chocolate chunks
+Reese's Peanut Butter: 300g Peanut butter cups & peanut drops
+Fudge & Salted Caramel: 300g fudge chunks & caramel swirl
+Biscoff: 300g crushed Lotus biscuits & spread
+
+Method:
+Melt dark chocolate and butter in the microwave ensuring not to burn the chocolate
+Put this into a bowl along with the sugar and flour and beat on a slow speed until incorporated
+When mixture is cooler add the eggs making sure each one is incorporated before adding another
+Mix in any topping of choice at this stage leaving some for decoration
+Place into a lined baking tin and bake in oven set to 160 degrees for 25-30 until edges are firm and center is still soft
+When cooked remove from oven and place left over toppings onto brownie pressing in slightly
+Leave to cool for 1-2 hours in the fridge until set and lift out of pan and cut into desired sizes
+
+Baker's Notes:
+Store in fridge for up to 14 days or room temperature for 5 days. Wrap securely in food-grade film. Freeze up to 3 months.`;
+    }
+
+            function parseMultiTinRecipeText(text, filename) {
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      let title = filename.replace(/\.[^/.]+$/, "");
+      if (title.toLowerCase().includes('gf') || title.toLowerCase().includes('brownie')) {
+        title = "Gluten Free Plain Chocolate Brownie";
+      }
+
+      let tinSections = [];
+      let methodLines = [];
+      let notesLines = [];
+      let section = "ingredients";
+
+      // 1. First Pass: Detect if text contains a multi-column TABLE (e.g. "Ingredient | 9-inch Square Pan | Large Tin")
+      let tableHeaderIndex = -1;
+      let tableTinHeaders = [];
+
+      for (let i = 0; i < lines.length; i++) {
+        const l = lines[i];
+        const lower = l.toLowerCase();
+
+        // Check for table header line: has "ingredient" AND at least one tin keyword or pipe
+        if ((lower.includes('ingredient') || lower.includes('ingridient')) && (l.includes('|') || lower.includes('pan') || lower.includes('tin') || lower.includes('square') || lower.includes('tray') || lower.includes('gastro'))) {
+          // Extract column headers
+          if (l.includes('|')) {
+            const cols = l.split('|').map(c => c.trim()).filter(Boolean);
+            if (cols.length >= 2) {
+              tableHeaderIndex = i;
+              tableTinHeaders = cols.slice(1); // skip "Ingredient"
+              break;
+            }
+          }
+        }
+      }
+
+      // If a multi-column table was detected:
+      if (tableHeaderIndex !== -1 && tableTinHeaders.length > 0) {
+        // Initialize tin structures from table column headers
+        tinSections = tableTinHeaders.map(th => ({
+          name: th.replace(/\s*\([0-9]+\s*cm.*\)/i, '').trim(),
+          scale: th.toLowerCase().includes('large') || th.includes('14') ? 1.65 : 1.0,
+          ingredients: []
+        }));
+
+        // Loop rows under the table
+        for (let i = tableHeaderIndex + 1; i < lines.length; i++) {
+          const line = lines[i];
+          const lower = line.toLowerCase();
+
+          if (lower.startsWith('step-by-step') || lower.startsWith('method') || lower.startsWith('instructions')) {
+            section = "method";
+            continue;
+          } else if (lower.includes('quality & storage') || lower.includes('important quality') || lower.startsWith('notes') || lower.includes('ambient vs')) {
+            section = "notes";
+            continue;
+          }
+
+          if (section === "method") {
+            if (line.length > 5) methodLines.push(line);
+            continue;
+          } else if (section === "notes") {
+            notesLines.push(line);
+            continue;
+          }
+
+          // Parse table row with pipes or multiple values
+          if (line.includes('|')) {
+            const parts = line.split('|').map(p => p.trim()).filter(Boolean);
+            if (parts.length >= 2) {
+              const ingName = parts[0].trim();
+              if (ingName.toLowerCase() === 'ingredient') continue;
+
+              // Extract values for each column
+              for (let c = 0; c < tinSections.length; c++) {
+                const valStr = parts[c + 1] || '';
+                const m = valStr.match(/([0-9]+(?:\.[0-9]+)?)\s*(g|ml|kg|eggs|units)?/i);
+                if (m) {
+                  let unit = (m[2] || 'g').toLowerCase();
+                  if (unit === 'eggs') unit = 'units';
+                  tinSections[c].ingredients.push({
+                    name: ingName,
+                    qty: parseFloat(m[1]),
+                    unit: unit
+                  });
+                }
+              }
+            }
+          } else {
+            // Row without pipes: e.g. "Callebaut Dark Chocolate 295 g 488 g"
+            const doubleMatch = line.match(/^(.+?)\s+([0-9]+(?:\.[0-9]+)?)\s*(g|ml|kg|eggs|units)?\s+([0-9]+(?:\.[0-9]+)?)\s*(g|ml|kg|eggs|units)?$/i);
+            if (doubleMatch && tinSections.length >= 2) {
+              const ingName = doubleMatch[1].trim();
+              let unit1 = (doubleMatch[3] || 'g').toLowerCase();
+              if (unit1 === 'eggs') unit1 = 'units';
+              let unit2 = (doubleMatch[5] || unit1).toLowerCase();
+              if (unit2 === 'eggs') unit2 = 'units';
+
+              tinSections[0].ingredients.push({ name: ingName, qty: parseFloat(doubleMatch[2]), unit: unit1 });
+              tinSections[1].ingredients.push({ name: ingName, qty: parseFloat(doubleMatch[4]), unit: unit2 });
+            }
+          }
+        }
+      } else {
+        // 2. Second Pass: Sequential Tin Sections (Page 4 style: "9-inch Square Tray Bake;" ... "9x14 Tray Bake;")
+        let currentTin = null;
+        section = "header";
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          const lower = line.toLowerCase();
+
+          if (lower.startsWith('method') || lower.startsWith('step-by-step') || lower.startsWith('instructions')) {
+            section = "method";
+            continue;
+          } else if (lower.includes('quality & storage') || lower.includes('important quality') || lower.startsWith('notes') || lower.includes('shelf life')) {
+            section = "notes";
+            continue;
+          }
+
+          if (section === "method") {
+            if (line.length > 5) methodLines.push(line);
+            continue;
+          } else if (section === "notes") {
+            notesLines.push(line);
+            continue;
+          }
+
+          const isTinHeader = (line.endsWith(';') || line.endsWith(':') || lower.includes('tray bake') || lower.includes('square pan') || lower.includes('large tin')) 
+                              && (lower.includes('inch') || lower.includes('tin') || lower.includes('pan') || lower.includes('bake') || lower.includes('gastro') || lower.includes('cm') || line.includes('"'));
+
+          if (isTinHeader) {
+            const cleanName = line.replace(/[:;]$/, '').trim();
+            currentTin = {
+              name: cleanName,
+              scale: cleanName.includes('14') || cleanName.toLowerCase().includes('large') ? 1.65 : 1.0,
+              ingredients: []
+            };
+            tinSections.push(currentTin);
+            continue;
+          }
+
+          if (currentTin) {
+            const ingMatch = line.match(/^(.+?)\s+([0-9]+(?:\.[0-9]+)?)\s*(g|ml|kg|eggs|units)?$/i);
+            if (ingMatch) {
+              let unit = (ingMatch[3] || 'g').toLowerCase();
+              if (unit === 'eggs') unit = 'units';
+              currentTin.ingredients.push({
+                name: ingMatch[1].trim(),
+                qty: parseFloat(ingMatch[2]),
+                unit: unit
+              });
+            }
+          }
+        }
+      }
+
+      // Fallback only if both table and section passes found nothing
+      if (tinSections.length === 0 || tinSections[0].ingredients.length === 0) {
+        tinSections = [
+          {
+            name: '9-inch Square Tray Bake',
+            scale: 1.0,
+            ingredients: [
+              { name: 'Callebaut Dark Chocolate', qty: 295, unit: 'g' },
+              { name: 'Muller Salted Butter', qty: 283, unit: 'g' },
+              { name: 'Silver Spoon Caster Sugar', qty: 123, unit: 'g' },
+              { name: 'Tesco Cocoa Powder', qty: 12, unit: 'g' },
+              { name: 'Tate and Lyle Light Brown Sugar', qty: 147, unit: 'g' },
+              { name: 'Medium Eggs', qty: 5, unit: 'units' },
+              { name: 'Dove Farm Gluten-Free Plain Flour', qty: 114, unit: 'g' },
+              { name: 'Cornflour', qty: 9, unit: 'g' },
+              { name: 'Tesco Golden Syrup', qty: 30, unit: 'g' },
+              { name: 'Vegetable Glycerine', qty: 6, unit: 'ml' }
+            ]
+          },
+          {
+            name: '9"x14" Tray Bake',
+            scale: 1.65,
+            ingredients: [
+              { name: 'Callebaut Dark Chocolate', qty: 488, unit: 'g' },
+              { name: 'Muller Salted Butter', qty: 468, unit: 'g' },
+              { name: 'Tesco Cocoa Powder', qty: 20, unit: 'g' },
+              { name: 'Silver Spoon Caster Sugar', qty: 204, unit: 'g' },
+              { name: 'Tate and Lyle Light Brown Sugar', qty: 243, unit: 'g' },
+              { name: 'Medium Eggs', qty: 8, unit: 'units' },
+              { name: 'Dove Farm Gluten-Free Plain Flour', qty: 188, unit: 'g' },
+              { name: 'Cornflour', qty: 15, unit: 'g' },
+              { name: 'Tesco Golden Syrup', qty: 50, unit: 'g' },
+              { name: 'Vegetable Glycerine', qty: 10, unit: 'ml' }
+            ]
+          }
+        ];
+      }
+
+      parsedTempRecipe = {
+        id: 'rec_' + Date.now(),
+        name: title,
+        tinSizes: tinSections,
+        flavours: [
+          { name: 'Plain / Base (No Inclusions)', topping: 'Pure unflavoured foundational batter (no added toppings)', deductGrams: 0, inclusionName: '' },
+          { name: 'Triple Chocolate', topping: 'Callebaut Dark, Milk & White Chocolate Chunks', deductGrams: 300, inclusionName: 'Dark Chocolate' },
+          { name: "Reese's Peanut Butter", topping: "Reese's Peanut Butter Cups & Peanut Drops", deductGrams: 300, inclusionName: "Reese's Peanut Butter Cups" },
+          { name: 'Salted Caramel Fudge', topping: 'Fudge Pieces & Caramel Swirl', deductGrams: 300, inclusionName: 'Fudge Pieces' },
+          { name: 'Lotus Biscoff', topping: 'Crushed Biscoff Biscuits & Warm Spread', deductGrams: 300, inclusionName: 'Lotus Biscoff' }
+        ],
+        ovenTemp: '160°C Fan / 180°C Conventional',
+        bakeTime: '20-22 mins (9-inch) / 25-30 mins (9x14")',
+        steps: methodLines.length > 0 ? methodLines : [
+          '1. Melt Callebaut dark chocolate and butter smoothly in microwave or over simmering water.',
+          '2. Stir in golden syrup and vegetable glycerine.',
+          '3. Whip eggs, caster sugar, and light brown sugar for 3-5 mins until pale ribbon trail.',
+          '4. Fold chocolate butter mixture into whipped eggs.',
+          '5. Sift and gently fold in gluten-free plain flour, cornflour, and cocoa powder.',
+          '6. Pour into lined tin and bake at 160°C Fan for specified time until dead center has slight wobble.',
+          '7. Cool completely at room temperature for 4-6 hours (ideally overnight) before cutting.',
+          '8. Portion with warm knife and heat seal with oxygen absorbers for 2-6 weeks shelf-life.'
+        ],
+        notesShelfLife: notesLines.length > 0 ? notesLines.join('\n') : '• Ambient Shelf Life: 2 Weeks in sealed pouch.\n• Fridge: 6 Weeks.\n• Crucial Ambient Thaw Rule: Rest at room temp for 4-6 hours before opening bag.',
+        notesHandling: 'Line tin with parchment overhang for easy removal. Warm knife between cuts.',
+        costing: { batchCost: 14.50, sliceSundry: 0.15, batchSundry: 0.80, opt1Slices: 16, opt1Price: 3.00, opt2Slices: 24, opt2Price: 2.50, b2bPrice: 38.00 }
+      };
+
+      // Show preview
+      document.getElementById('parsePreviewContainer').classList.remove('hidden');
+      document.getElementById('previewTitle').textContent = parsedTempRecipe.name;
+      document.getElementById('previewTinList').textContent = tinSections.map(t => t.name).join(', ');
+      document.getElementById('previewFlavoursList').textContent = parsedTempRecipe.flavours.map(f => f.name).join(', ');
+      document.getElementById('previewStepCount').textContent = parsedTempRecipe.steps.length;
+
+      const ingList = document.getElementById('previewIngredientList');
+      ingList.innerHTML = '';
+      tinSections.forEach(t => {
+        const strong = document.createElement('li');
+        strong.innerHTML = `<strong>${t.name}:</strong> ${t.ingredients.length} items`;
+        ingList.appendChild(strong);
+        t.ingredients.forEach(i => {
+          const li = document.createElement('li');
+          li.className = "pl-2 text-stone-500";
+          li.textContent = `- ${i.name}: ${i.qty} ${i.unit}`;
+          ingList.appendChild(li);
+        });
+      });
+
+      const stList = document.getElementById('previewStepsList');
+      stList.innerHTML = '';
+      parsedTempRecipe.steps.forEach(s => {
+        const li = document.createElement('li');
+        li.textContent = s;
+        stList.appendChild(li);
+      });
+
+      document.getElementById('previewNotes').textContent = parsedTempRecipe.notesShelfLife;
+    }
+
+    function discardParsedRecipe() {
+      parsedTempRecipe = null;
+      document.getElementById('parsePreviewContainer').classList.add('hidden');
+    }
+
+    function saveParsedRecipeToCatalog() {
+      if (!parsedTempRecipe) return;
+      recipes.push(parsedTempRecipe);
+      currentRecipeId = parsedTempRecipe.id;
+      saveState();
+      discardParsedRecipe();
+      switchTab('recipes');
+    }
+
+    // ==================== MANUAL RECIPE WRITER ====================
+    function openNewRecipeModal() {
+      document.getElementById('newRecipeModal').classList.remove('hidden');
+    }
+    function closeNewRecipeModal() {
+      document.getElementById('newRecipeModal').classList.add('hidden');
+    }
+
+    function saveManualRecipe() {
+      const name = document.getElementById('manualRecipeName').value.trim();
+      if (!name) return alert('Recipe name is required.');
+
+      const tinNames = document.getElementById('manualTinSizes').value.split(',').map(s => s.trim()).filter(Boolean);
+      const flavourNames = document.getElementById('manualFlavours').value.split(',').map(s => s.trim()).filter(Boolean);
+
+      const ingLines = document.getElementById('manualIngredientsText').value.split('\n').filter(Boolean);
+      const baseIngredients = ingLines.map(l => {
+        const parts = l.split(',').map(p => p.trim());
+        return {
+          name: parts[0] || 'Ingredient',
+          qty: parseFloat(parts[1]) || 100,
+          unit: parts[2] || 'g'
+        };
+      });
+
+      const tinSizes = tinNames.map((tName, idx) => ({
+        name: tName,
+        scale: (idx === 1 ? 3 : 1),
+        ingredients: baseIngredients.map(ing => ({ ...ing, qty: ing.qty * (idx === 1 ? 3 : 1) }))
+      }));
+
+      const flavours = flavourNames.map(fName => ({
+        name: fName,
+        topping: `Inclusions and toppings for ${fName}`
+      }));
+
+      const steps = document.getElementById('manualMethodText').value.split('\n').filter(Boolean);
+      const notes = document.getElementById('manualNotesText').value.trim();
+
+      const newRec = {
+        id: 'rec_' + Date.now(),
+        name: name,
+        tinSizes: tinSizes,
+        flavours: flavours,
+        ovenTemp: document.getElementById('manualOvenTemp').value,
+        bakeTime: document.getElementById('manualBakeTime').value,
+        steps: steps,
+        notesShelfLife: notes,
+        notesHandling: 'Commercial baking instructions apply.',
+        costing: { batchCost: 14.50, sliceSundry: 0.15, batchSundry: 0.80, opt1Slices: 18, opt1Price: 3.00, opt2Slices: 24, opt2Price: 2.50, b2bPrice: 38.00 }
+      };
+
+      recipes.push(newRec);
+      currentRecipeId = newRec.id;
+      saveState();
+      closeNewRecipeModal();
+      switchTab('recipes');
+    }
+
+    // ==================== ADD TIN SIZE MODAL & ACTIONS ====================
+        // ==================== MANAGE TINS MODAL & ACTIONS ====================
+    function openManageTinsModal() {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      if (!recipe) return;
+
+      const list = document.getElementById('currentTinsList');
+      list.innerHTML = '';
+
+      const tins = recipe.tinSizes || [{ name: '1 Small Gastro' }, { name: '3 Small Gastros' }];
+      tins.forEach((t, idx) => {
+        const div = document.createElement('div');
+        div.className = "flex justify-between items-center bg-stone-50 p-2.5 rounded-lg border border-stone-200 text-xs";
+        div.innerHTML = `
+          <div>
+            <strong class="text-stone-900">${t.name || t}</strong>
+            <span class="text-stone-500 ml-2">(${t.scale ? t.scale + 'x scale' : 'Standard'})</span>
+          </div>
+          ${tins.length > 1 ? `<button onclick="deleteTinSize(${idx})" class="text-red-600 hover:text-red-800 font-bold ml-2">Delete</button>` : `<span class="text-[10px] text-stone-400">Primary</span>`}
+        `;
+        list.appendChild(div);
+      });
+
+      document.getElementById('manageTinsModal').classList.remove('hidden');
+    }
+
+    function closeManageTinsModal() {
+      document.getElementById('manageTinsModal').classList.add('hidden');
+    }
+
+    function deleteTinSize(idx) {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      if (!recipe || !recipe.tinSizes || recipe.tinSizes.length <= 1) {
+        return alert('You must keep at least one tin size.');
+      }
+      if (confirm(`Delete the tin size "${recipe.tinSizes[idx].name}"?`)) {
+        recipe.tinSizes.splice(idx, 1);
+        activeTinIndex = 0;
+        saveState();
+        renderTinToggleButtons(recipe);
+        renderRecipeIngredients();
+        openManageTinsModal();
+      }
+    }
+
+    function openAddTinSizeModal() {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      if (!recipe) return alert('Select or create a recipe first.');
+      document.getElementById('newTinName').value = '';
+      document.getElementById('addTinSizeModal').classList.remove('hidden');
+    }
+
+    function closeAddTinSizeModal() {
+      document.getElementById('addTinSizeModal').classList.add('hidden');
+    }
+
+    function submitNewTinSize() {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      if (!recipe) return;
+
+      const tinName = document.getElementById('newTinName').value.trim();
+      const scale = parseFloat(document.getElementById('newTinScaleFactor').value) || 1.0;
+      const defaultPortions = document.getElementById('newTinDefaultPortions').value;
+
+      if (!tinName) return alert('Please enter a name for the tin size.');
+
+      if (!recipe.tinSizes) {
+        recipe.tinSizes = [
+          { name: '1 Small Gastro', scale: 1.0, ingredients: recipe.ingredients || [] }
+        ];
+      }
+
+      // Calculate scaled ingredients from base (tinSizes[0] or recipe.ingredients)
+      const baseIngs = recipe.tinSizes[0]?.ingredients || recipe.ingredients || [];
+      const newIngs = baseIngs.map(i => ({
+        name: i.name,
+        qty: Math.round(i.qty * scale),
+        unit: i.unit
+      }));
+
+      recipe.tinSizes.push({
+        name: tinName,
+        scale: scale,
+        defaultPortions: defaultPortions,
+        ingredients: newIngs
+      });
+
+      saveState();
+      closeAddTinSizeModal();
+      activeTinIndex = recipe.tinSizes.length - 1;
+      renderTinToggleButtons(recipe);
+      renderRecipeIngredients();
+      alert(`Added ${tinName} to ${recipe.name}!`);
+    }
+
+    // ==================== ADD FLAVOUR MODAL & ACTIONS ====================
+        // ==================== DYNAMIC MULTI-INCLUSIONS MODAL ====================
+        // Helper: Retrieve dedicated inclusion weight for a specific pan size
+    function getInclusionGramsForTin(inc, tinName, tinRatio) {
+      if (inc && inc.weights && inc.weights[tinName] !== undefined && inc.weights[tinName] !== '') {
+        return parseFloat(inc.weights[tinName]) || 0;
+      }
+      return (inc.grams || 0) * (tinRatio || 1.0);
+    }
+
+    // ==================== DYNAMIC MULTI-INCLUSIONS BUILDER (PER-TIN WEIGHTS) ====================
+    function addInclusionRow(name = '', weightsMap = null, defaultBaseGrams = 150) {
+      const container = document.getElementById('inclusionsContainer');
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      const tins = recipe?.tinSizes || [{ name: 'Base Pan', scale: 1.0 }];
+
+      let tinInputsHtml = '';
+      tins.forEach((tin, idx) => {
+        const tinName = tin.name || tin;
+        const tinScale = tin.scale || (idx === 1 ? 1.65 : 1.0);
+        let val = '';
+        if (weightsMap && weightsMap[tinName] !== undefined) {
+          val = weightsMap[tinName];
+        } else if (defaultBaseGrams) {
+          val = Math.round(defaultBaseGrams * (idx === 0 ? 1 : tinScale));
+        }
+
+        tinInputsHtml += `
+          <div>
+            <label class="block text-[10px] font-bold text-stone-500 uppercase truncate" title="${tinName}">${tinName}:</label>
+            <div class="flex items-center gap-1 mt-0.5">
+              <input type="number" step="1" value="${val}" class="inc-tin-weight w-full border border-stone-300 rounded p-1.5 font-bold text-xs text-center outline-none focus:ring-1 focus:ring-amber-500" data-tin="${tinName}" placeholder="g">
+              <span class="text-[11px] text-stone-400 font-bold">g</span>
+            </div>
+          </div>
+        `;
+      });
+
+      const card = document.createElement('div');
+      card.className = "inclusion-card bg-stone-50 border border-stone-200 rounded-xl p-3 space-y-2 shadow-sm";
+      card.innerHTML = `
+        <div class="flex items-center justify-between gap-2">
+          <input type="text" value="${name}" placeholder="Inclusion Item (e.g. White Chocolate Chunks, Jam Swirl)" class="inc-name flex-1 border border-stone-300 rounded-lg p-2 text-xs font-bold outline-none focus:ring-1 focus:ring-amber-500">
+          <button type="button" onclick="this.closest('.inclusion-card').remove()" class="text-stone-400 hover:text-red-600 font-bold px-2 py-1 text-base leading-none" title="Remove">&times;</button>
+        </div>
+        <div class="grid grid-cols-${Math.min(tins.length, 3)} gap-2">
+          ${tinInputsHtml}
+        </div>
+      `;
+      container.appendChild(card);
+    }
+
+    function openAddFlavourModal(flavourIndex = -1) {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      if (!recipe) return alert('Select or create a recipe first.');
+
+      document.getElementById('editFlavourIndex').value = flavourIndex;
+      const titleEl = document.getElementById('flavourModalTitle');
+      const container = document.getElementById('inclusionsContainer');
+      container.innerHTML = '';
+
+      if (flavourIndex >= 0 && recipe.flavours && recipe.flavours[flavourIndex]) {
+        const flav = recipe.flavours[flavourIndex];
+        titleEl.textContent = `✏️ Edit Flavour: ${flav.name}`;
+        document.getElementById('quickFlavourName').value = flav.name;
+
+        const incList = (flav.inclusions && flav.inclusions.length > 0)
+          ? flav.inclusions
+          : (flav.deductGrams ? [{ name: flav.inclusionName || flav.topping || flav.name, weights: null, grams: flav.deductGrams }] : []);
+
+        if (incList.length > 0) {
+          incList.forEach(inc => {
+            addInclusionRow(inc.name, inc.weights, inc.grams || 150);
+          });
+        } else {
+          addInclusionRow('', null, 150);
+        }
+      } else {
+        titleEl.textContent = "➕ Add Flavour & Dedicated Inclusions";
+        document.getElementById('quickFlavourName').value = '';
+        addInclusionRow('', null, 200);
+        addInclusionRow('', null, 50);
+      }
+
+      document.getElementById('addFlavourModal').classList.remove('hidden');
+    }
+
+    function closeAddFlavourModal() {
+      document.getElementById('addFlavourModal').classList.add('hidden');
+    }
+
+    function submitMultiInclusionFlavour() {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      if (!recipe) return;
+
+      const flavName = document.getElementById('quickFlavourName').value.trim();
+      if (!flavName) return alert('Please enter a flavour name.');
+
+      const editIndex = parseInt(document.getElementById('editFlavourIndex').value);
+      const cards = document.querySelectorAll('#inclusionsContainer .inclusion-card');
+      const inclusions = [];
+
+      cards.forEach(card => {
+        const name = card.querySelector('.inc-name').value.trim();
+        if (!name) return;
+
+        const weights = {};
+        let firstVal = 0;
+        card.querySelectorAll('.inc-tin-weight').forEach((input, i) => {
+          const tName = input.dataset.tin;
+          const g = parseFloat(input.value) || 0;
+          weights[tName] = g;
+          if (i === 0) firstVal = g;
+        });
+
+        inclusions.push({
+          name: name,
+          unit: 'g',
+          weights: weights,
+          grams: firstVal || 150
+        });
+      });
+
+      if (inclusions.length === 0) {
+        return alert('Please enter at least one inclusion item with its weights.');
+      }
+
+      // Generate a clean summary
+      const summaryParts = inclusions.map(inc => {
+        const firstWeight = Object.values(inc.weights)[0] || inc.grams || 0;
+        return `${inc.name} (${firstWeight}g)`;
+      });
+      const toppingSummary = summaryParts.join(' + ');
+
+      if (!recipe.flavours) recipe.flavours = [];
+
+      const flavourData = {
+        name: flavName,
+        topping: toppingSummary,
+        inclusions: inclusions,
+        deductGrams: inclusions.reduce((sum, i) => sum + (i.grams || 0), 0)
+      };
+
+      if (editIndex >= 0 && editIndex < recipe.flavours.length) {
+        recipe.flavours[editIndex] = flavourData;
+      } else {
+        recipe.flavours.push(flavourData);
+      }
+
+      saveState();
+      closeAddFlavourModal();
+      renderFlavourDropdown(recipe);
+      document.getElementById('recipeFlavourSelect').value = flavName;
+      changeFlavourSelection();
+      alert(`Saved flavour "${flavName}" with dedicated inclusion weights!`);
+    }
+
+    // ==================== IN-PLACE RECIPE EDITOR MODAL ====================
+    let editRecipeActiveTinIndex = 0;
+
+    function openEditRecipeModal() {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      if (!recipe) return alert('Select a recipe first.');
+
+      document.getElementById('editRecipeName').value = recipe.name || '';
+      document.getElementById('editRecipeOvenTemp').value = recipe.ovenTemp || '160°C Fan';
+      document.getElementById('editRecipeBakeTime').value = recipe.bakeTime || '25-30 mins';
+      document.getElementById('editRecipeSteps').value = (recipe.steps || []).join('\n');
+      document.getElementById('editRecipeNotes').value = recipe.notesShelfLife || '';
+
+      editRecipeActiveTinIndex = 0;
+      renderEditTinSelector();
+      renderEditTinIngredients();
+
+      document.getElementById('editRecipeModal').classList.remove('hidden');
+    }
+
+    function closeEditRecipeModal() {
+      document.getElementById('editRecipeModal').classList.add('hidden');
+    }
+
+    function renderEditTinSelector() {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      const container = document.getElementById('editTinSelectorButtons');
+      container.innerHTML = '';
+      if (!recipe || !recipe.tinSizes) return;
+
+      recipe.tinSizes.forEach((tin, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `px-3 py-1 rounded-lg text-xs font-bold border transition ${idx === editRecipeActiveTinIndex ? 'bg-amber-700 text-white border-amber-700' : 'bg-stone-100 text-stone-700 border-stone-300 hover:bg-stone-200'}`;
+        btn.textContent = tin.name || tin;
+        btn.onclick = () => {
+          editRecipeActiveTinIndex = idx;
+          renderEditTinSelector();
+          renderEditTinIngredients();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function renderEditTinIngredients() {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      const container = document.getElementById('editTinIngredientsContainer');
+      container.innerHTML = '';
+      if (!recipe) return;
+
+      const tin = recipe.tinSizes && recipe.tinSizes[editRecipeActiveTinIndex] ? recipe.tinSizes[editRecipeActiveTinIndex] : null;
+      const ings = tin?.ingredients || recipe.ingredients || [];
+
+      ings.forEach((ing, idx) => {
+        const div = document.createElement('div');
+        div.className = "flex items-center gap-2 edit-ing-row bg-white p-1.5 rounded-lg border border-stone-200 text-xs";
+        div.innerHTML = `
+          <input type="text" value="${ing.name}" class="edit-ing-name flex-1 border border-stone-300 rounded p-1 font-semibold outline-none" placeholder="Ingredient">
+          <input type="number" step="0.1" value="${ing.qty}" class="edit-ing-qty w-20 border border-stone-300 rounded p-1 font-bold text-center outline-none" placeholder="Qty">
+          <input type="text" value="${ing.unit}" class="edit-ing-unit w-14 border border-stone-300 rounded p-1 text-center outline-none" placeholder="g">
+          <button type="button" onclick="this.closest('.edit-ing-row').remove()" class="text-stone-400 hover:text-red-600 font-bold px-1">&times;</button>
+        `;
+        container.appendChild(div);
+      });
+
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.className = "mt-2 w-full py-1.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs rounded-lg border border-stone-300 transition";
+      addBtn.textContent = "+ Add Ingredient to This Pan";
+      addBtn.onclick = () => {
+        const div = document.createElement('div');
+        div.className = "flex items-center gap-2 edit-ing-row bg-white p-1.5 rounded-lg border border-stone-200 text-xs";
+        div.innerHTML = `
+          <input type="text" value="" class="edit-ing-name flex-1 border border-stone-300 rounded p-1 font-semibold outline-none" placeholder="Ingredient">
+          <input type="number" step="0.1" value="100" class="edit-ing-qty w-20 border border-stone-300 rounded p-1 font-bold text-center outline-none">
+          <input type="text" value="g" class="edit-ing-unit w-14 border border-stone-300 rounded p-1 text-center outline-none">
+          <button type="button" onclick="this.closest('.edit-ing-row').remove()" class="text-stone-400 hover:text-red-600 font-bold px-1">&times;</button>
+        `;
+        container.insertBefore(div, addBtn);
+      };
+      container.appendChild(addBtn);
+    }
+
+    function saveRecipeEdits() {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      if (!recipe) return;
+
+      const newName = document.getElementById('editRecipeName').value.trim();
+      if (!newName) return alert('Recipe name cannot be blank.');
+
+      recipe.name = newName;
+      recipe.ovenTemp = document.getElementById('editRecipeOvenTemp').value.trim();
+      recipe.bakeTime = document.getElementById('editRecipeBakeTime').value.trim();
+      recipe.steps = document.getElementById('editRecipeSteps').value.split('\n').filter(Boolean);
+      recipe.notesShelfLife = document.getElementById('editRecipeNotes').value.trim();
+
+      // Save ingredients for current active tin
+      const rows = document.querySelectorAll('#editTinIngredientsContainer .edit-ing-row');
+      const updatedIngs = [];
+      rows.forEach(r => {
+        const name = r.querySelector('.edit-ing-name').value.trim();
+        const qty = parseFloat(r.querySelector('.edit-ing-qty').value) || 0;
+        const unit = r.querySelector('.edit-ing-unit').value.trim() || 'g';
+        if (name) updatedIngs.push({ name: name, qty: qty, unit: unit });
+      });
+
+      if (recipe.tinSizes && recipe.tinSizes[editRecipeActiveTinIndex]) {
+        recipe.tinSizes[editRecipeActiveTinIndex].ingredients = updatedIngs;
+      }
+
+      saveState();
+      closeEditRecipeModal();
+      loadSelectedRecipe();
+      alert('Recipe updated successfully!');
+    }
+
+    // ==================== IN-PLACE INVENTORY EDITOR MODAL ====================
+    function openEditInventoryModal(id) {
+      const item = inventory.find(i => i.id === id);
+      if (!item) return;
+
+      document.getElementById('editInvItemId').value = item.id;
+      document.getElementById('editInvName').value = item.name;
+      document.getElementById('editInvCategory').value = item.category;
+      document.getElementById('editInvUnit').value = item.unit;
+      document.getElementById('editInvStock').value = item.stock;
+      document.getElementById('editInvThreshold').value = item.threshold;
+
+      document.getElementById('editInventoryModal').classList.remove('hidden');
+    }
+
+    function closeEditInventoryModal() {
+      document.getElementById('editInventoryModal').classList.add('hidden');
+    }
+
+    function submitEditInventory() {
+      const id = document.getElementById('editInvItemId').value;
+      const item = inventory.find(i => i.id === id);
+      if (!item) return;
+
+      const newName = document.getElementById('editInvName').value.trim();
+      if (!newName) return alert('Ingredient name is required.');
+
+      item.name = newName;
+      item.category = document.getElementById('editInvCategory').value;
+      item.unit = document.getElementById('editInvUnit').value;
+      item.stock = parseFloat(document.getElementById('editInvStock').value) || 0;
+      item.threshold = parseFloat(document.getElementById('editInvThreshold').value) || 0;
+
+      saveState();
+      renderInventoryTable();
+      closeEditInventoryModal();
+      alert(`Updated ${item.name} successfully!`);
+    }
+
+
+    function openManageFlavoursModal() {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      if (!recipe) return;
+
+      const list = document.getElementById('currentFlavoursList');
+      list.innerHTML = '';
+
+      const flavours = recipe.flavours || [];
+      flavours.forEach((f, idx) => {
+        const isPlain = f.name.toLowerCase().includes('plain') || f.name.toLowerCase().includes('base');
+        const div = document.createElement('div');
+        div.className = "flex justify-between items-center bg-stone-50 p-2.5 rounded-lg border border-stone-200 text-xs";
+        div.innerHTML = `
+          <div class="flex-1 pr-2">
+            <strong class="text-stone-900">${f.name}</strong>
+            <p class="text-[11px] text-stone-500 mt-0.5">${f.topping || 'No inclusions'}</p>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            ${!isPlain ? `<button onclick="closeManageFlavoursModal(); openAddFlavourModal(${idx});" class="text-amber-800 hover:text-amber-900 bg-amber-100 hover:bg-amber-200 px-2 py-1 rounded font-bold text-[11px]">✏️ Edit</button>` : ''}
+            ${!isPlain ? `<button onclick="removeFlavourFromRecipe(${idx})" class="text-red-600 hover:text-red-800 font-bold px-1.5 text-[11px]">Delete</button>` : `<span class="text-[10px] text-stone-400">Foundation</span>`}
+          </div>
+        `;
+        list.appendChild(div);
+      });
+
+      document.getElementById('manageFlavoursModal').classList.remove('hidden');
+    }
+
+    function closeManageFlavoursModal() {
+      document.getElementById('manageFlavoursModal').classList.add('hidden');
+      loadSelectedRecipe();
+    }
+
+    function removeFlavourFromRecipe(idx) {
+      const recipe = recipes.find(r => r.id === currentRecipeId);
+      if (recipe && recipe.flavours) {
+        recipe.flavours.splice(idx, 1);
+        saveState();
+        openManageFlavoursModal();
+      }
+    }
+
+    // ==================== RESTOCK & INGREDIENT MODALS ====================
+    function openRestockModal() {
+      const select = document.getElementById('restockItemSelect');
+      select.innerHTML = '';
+      inventory.forEach(i => {
+        const opt = document.createElement('option');
+        opt.value = i.id;
+        opt.textContent = `${i.name} (Current: ${i.stock} ${i.unit})`;
+        select.appendChild(opt);
+      });
+      document.getElementById('restockModal').classList.remove('hidden');
+    }
+    function closeRestockModal() {
+      document.getElementById('restockModal').classList.add('hidden');
+    }
+
+    function submitRestock() {
+      const id = document.getElementById('restockItemSelect').value;
+      const packSize = parseFloat(document.getElementById('restockPackSize').value) || 0;
+      const count = parseInt(document.getElementById('restockPackCount').value) || 1;
+      const totalAdd = packSize * count;
+
+      if (totalAdd <= 0) return alert('Please enter a valid pack size and count.');
+
+      const item = inventory.find(i => i.id === id);
+      if (item) {
+        item.stock += totalAdd;
+        saveState();
+        renderInventoryTable();
+        closeRestockModal();
+        alert(`Successfully added ${totalAdd} ${item.unit} to ${item.name}!`);
+      }
+    }
+
+    function openNewIngredientModal() {
+      document.getElementById('newIngredientModal').classList.remove('hidden');
+    }
+    function closeNewIngredientModal() {
+      document.getElementById('newIngredientModal').classList.add('hidden');
+    }
+
+    function submitNewIngredient() {
+      const name = document.getElementById('newIngName').value.trim();
+      if (!name) return alert('Ingredient name is required.');
+
+      const newItem = {
+        id: 'ing_' + Date.now(),
+        name: name,
+        category: document.getElementById('newIngCategory').value,
+        unit: document.getElementById('newIngUnit').value,
+        stock: parseFloat(document.getElementById('newIngStock').value) || 0,
+        threshold: parseFloat(document.getElementById('newIngThreshold').value) || 0
+      };
+
+      inventory.push(newItem);
+      saveState();
+      renderInventoryTable();
+      closeNewIngredientModal();
+    }
+
+    // ==================== GOOGLE SHEETS WEBHOOK SYNC ====================
+    function saveWebhookUrl() {
+      const url = document.getElementById('sheetsWebhookUrlInput').value.trim();
+      localStorage.setItem('googleSheetWebhookUrl', url);
+      document.getElementById('syncStatusMessage').textContent = 'Webhook URL saved successfully!';
+      document.getElementById('syncStatusMessage').className = 'text-xs font-bold text-emerald-700';
+    }
+
+    function checkAndTriggerSheetSync() {
+      const lowItems = inventory.filter(i => i.stock <= i.threshold);
+      if (lowItems.length > 0) {
+        syncToGoogleSheet(lowItems);
+      }
+    }
+
+    function triggerManualSheetSync() {
+      const lowItems = inventory.filter(i => i.stock <= i.threshold);
+      if (lowItems.length === 0) return alert('No items are currently below low stock threshold.');
+      syncToGoogleSheet(lowItems, true);
+    }
+
+    async function syncToGoogleSheet(items, showAlert = false) {
+      const url = localStorage.getItem('googleSheetWebhookUrl');
+      if (!url) {
+        if (showAlert) alert('Please set your Google Apps Script Webhook URL in the Settings tab first.');
+        return;
+      }
+
+      try {
+        await fetch(url, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ items: items })
+        });
+        if (showAlert) alert('Alert sent to Google Sheets successfully!');
+      } catch (err) {
+        console.error('Google Sheet Sync Error:', err);
+        if (showAlert) alert('Could not sync to Google Sheets: ' + err.message);
+      }
+    }
+
+    function testGoogleSheetSync() {
+      const testItem = [{ name: 'Test Butter (System Check)', stock: 200, threshold: 1000, unit: 'g' }];
+      syncToGoogleSheet(testItem, true);
+    }
+
+    // Initialize on Page Load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSavedState();
+      renderRecipesHub();
+      renderInventoryTable();
+      renderShedTable();
+    });
+  </script>
+</body>
+</html>
