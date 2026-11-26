@@ -1139,9 +1139,7 @@
           "9. Sanitary Portioning: Lift slab out using parchment paper handles. Dip sharp chef's knife in boiling water and wipe dry between every cut to slice into precision portions.",
           "10. Packaging: Place individual portions cleanly into high-barrier plastic bags with oxygen absorber (if shelf-life >3 weeks) and heat-seal immediately."
         ],
-        "notesShelfLife": "• Ambient Shelf Life: 2 Weeks at room temperature away from sunlight in sealed pouches.
-• Fridge Storage: Up to 6 Weeks.
-• The Ambient Thaw Rule (CRUCIAL): If refrigerated, let sit sealed at room temp for 4 to 6 hours before opening bag to prevent condensation and mold.",
+        "notesShelfLife": "• Ambient Shelf Life: 2 Weeks at room temperature away from sunlight in sealed pouches.\n• Fridge Storage: Up to 6 Weeks.\n• The Ambient Thaw Rule (CRUCIAL): If refrigerated, let sit sealed at room temp for 4 to 6 hours before opening bag to prevent condensation and mold.",
         "notesHandling": "Line tins with parchment paper leaving overhang handles. For clean presentation, warm knife between cuts.",
         "costing": {
           "batchCost": 14.5,
@@ -2086,8 +2084,7 @@ Store in fridge for up to 14 days or room temperature for 5 days. Wrap securely 
     }
 
     function parseMultiTinRecipeText(text, filename) {
-      const lines = text.split('
-').map(l => l.trim()).filter(Boolean);
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
       let title = filename.replace(/\.[^/.]+$/, "");
       if (title.toLowerCase().includes('gf') || title.toLowerCase().includes('brownie')) {
         title = "Gluten Free Plain Chocolate Brownie";
@@ -2279,8 +2276,7 @@ Store in fridge for up to 14 days or room temperature for 5 days. Wrap securely 
           '7. Cool completely at room temperature for 4-6 hours (ideally overnight) before cutting.',
           '8. Portion with warm knife and heat seal with oxygen absorbers for 2-6 weeks shelf-life.'
         ],
-        notesShelfLife: notesLines.length > 0 ? notesLines.join('
-') : '• Ambient Shelf Life: 2 Weeks in sealed pouch.
+        notesShelfLife: notesLines.length > 0 ? notesLines.join('\n') : '• Ambient Shelf Life: 2 Weeks in sealed pouch.
 • Fridge: 6 Weeks.
 • Crucial Ambient Thaw Rule: Rest at room temp for 4-6 hours before opening bag.',
         notesHandling: 'Line tin with parchment overhang for easy removal. Warm knife between cuts.',
@@ -2347,8 +2343,7 @@ Store in fridge for up to 14 days or room temperature for 5 days. Wrap securely 
       const tinNames = document.getElementById('manualTinSizes').value.split(',').map(s => s.trim()).filter(Boolean);
       const flavourNames = document.getElementById('manualFlavours').value.split(',').map(s => s.trim()).filter(Boolean);
 
-      const ingLines = document.getElementById('manualIngredientsText').value.split('
-').filter(Boolean);
+      const ingLines = document.getElementById('manualIngredientsText').value.split('\n').filter(Boolean);
       const baseIngredients = ingLines.map(l => {
         const parts = l.split(',').map(p => p.trim());
         return {
@@ -2369,8 +2364,7 @@ Store in fridge for up to 14 days or room temperature for 5 days. Wrap securely 
         topping: `Inclusions and toppings for ${fName}`
       }));
 
-      const steps = document.getElementById('manualMethodText').value.split('
-').filter(Boolean);
+      const steps = document.getElementById('manualMethodText').value.split('\n').filter(Boolean);
       const notes = document.getElementById('manualNotesText').value.trim();
 
       const newRec = {
@@ -2732,8 +2726,7 @@ Store in fridge for up to 14 days or room temperature for 5 days. Wrap securely 
       recipe.name = newName;
       recipe.ovenTemp = document.getElementById('editRecipeOvenTemp').value.trim();
       recipe.bakeTime = document.getElementById('editRecipeBakeTime').value.trim();
-      recipe.steps = document.getElementById('editRecipeSteps').value.split('
-').filter(Boolean);
+      recipe.steps = document.getElementById('editRecipeSteps').value.split('\n').filter(Boolean);
       recipe.notesShelfLife = document.getElementById('editRecipeNotes').value.trim();
 
       const rows = document.querySelectorAll('#editTinIngredientsContainer .edit-ing-row');
