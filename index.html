@@ -1074,7 +1074,7 @@
             ]
           },
           {
-            "name": "9"x14" Tray Bake",
+            "name": "9\"x14\" Tray Bake",
             "scale": 1.65,
             "defaultPortions": "24_retail",
             "ingredients": [
@@ -1102,8 +1102,8 @@
             "name": "Triple Chocolate",
             "topping": "Callebaut Dark & Milk Chunks (200g) + White Drops (100g)",
             "inclusions": [
-              { "name": "Callebaut Dark & Milk Chocolate Chunks", "unit": "g", "weights": { "9-inch Square Tray Bake": 200, "9"x14" Tray Bake": 320 }, "grams": 200 },
-              { "name": "White Chocolate Drops", "unit": "g", "weights": { "9-inch Square Tray Bake": 100, "9"x14" Tray Bake": 160 }, "grams": 100 }
+              { "name": "Callebaut Dark & Milk Chocolate Chunks", "unit": "g", "weights": { "9-inch Square Tray Bake": 200, "9\"x14\" Tray Bake": 320 }, "grams": 200 },
+              { "name": "White Chocolate Drops", "unit": "g", "weights": { "9-inch Square Tray Bake": 100, "9\"x14\" Tray Bake": 160 }, "grams": 100 }
             ]
           },
           {
@@ -1126,7 +1126,7 @@
           }
         ],
         "ovenTemp": "160°C Fan / 180°C Conventional",
-        "bakeTime": "20-22 mins (9-inch) / 25-30 mins (9x14")",
+        "bakeTime": "20-22 mins (9-inch) / 25-30 mins (9x14\")",
         "steps": [
           "1. Melt the Base: In a large heatproof bowl set over simmering water (or in short microwave bursts), melt together Callebaut dark chocolate and butter until smooth and glossy.",
           "2. Add Humectants: Remove from heat. Immediately stir in golden syrup and vegetable glycerine until incorporated. Let cool slightly until warm.",
@@ -1134,7 +1134,7 @@
           "4. Combine: Gently fold melted chocolate and butter mixture into whipped eggs until a uniform, glossy batter forms.",
           "5. Fold Dry Ingredients: Sift together gluten-free plain flour, cornflour, and cocoa powder. Fold gently into wet batter using a spatula just until flour pockets disappear. Do not overmix.",
           "6. Inclusions (Optional): If making a flavour variation, fold in chosen inclusions at this stage, reserving some for top decoration.",
-          "7. Bake: Pour batter into lined tin. Bake at 160°C Fan / 180°C Conventional for 20-22 mins (9-inch) or 25-30 mins (9x14") until edges are firm and center has slight gentle wobble.",
+          "7. Bake: Pour batter into lined tin. Bake at 160°C Fan / 180°C Conventional for 20-22 mins (9-inch) or 25-30 mins (9x14\") until edges are firm and center has slight gentle wobble.",
           "8. Stabilization: Remove from oven. Do not move or slice. Cool completely in tin at room temperature for 4-6 hours (ideally overnight) to allow chocolate and fats to recrystallize.",
           "9. Sanitary Portioning: Lift slab out using parchment paper handles. Dip sharp chef's knife in boiling water and wipe dry between every cut to slice into precision portions.",
           "10. Packaging: Place individual portions cleanly into high-barrier plastic bags with oxygen absorber (if shelf-life >3 weeks) and heat-seal immediately."
@@ -1931,12 +1931,10 @@
       const lowItems = inventory.filter(i => i.stock <= i.threshold);
       if (lowItems.length === 0) return alert('No items are currently low on stock.');
 
-      let text = "Ashlie Bakes Cakes — Reorder Shopping List:
-";
+      let text = "Ashlie Bakes Cakes — Reorder Shopping List:\n";
       lowItems.forEach(i => {
         const deficit = i.threshold - i.stock;
-        text += `- ${i.name}: Current: ${i.stock}${i.unit} | Min Needed: ${i.threshold}${i.unit} (Order at least ${deficit}${i.unit})
-`;
+        text += `- ${i.name}: Current: ${i.stock}${i.unit} | Min Needed: ${i.threshold}${i.unit} (Order at least ${deficit}${i.unit})\n`;
       });
 
       navigator.clipboard.writeText(text).then(() => {
@@ -2014,8 +2012,7 @@
             for (let i = 1; i <= count; i++) {
               pdf.getPage(i).then(page => {
                 page.getTextContent().then(tc => {
-                  fullText += tc.items.map(item => item.str).join(' ') + '
-';
+                  fullText += tc.items.map(item => item.str).join(' ') + '\n';
                   if (i === count) parseMultiTinRecipeText(fullText, file.name);
                 });
               });
@@ -2265,7 +2262,7 @@ Store in fridge for up to 14 days or room temperature for 5 days. Wrap securely 
           { name: 'Lotus Biscoff', topping: 'Crushed Biscoff Biscuits & Warm Spread', deductGrams: 300, inclusionName: 'Lotus Biscoff' }
         ],
         ovenTemp: '160°C Fan / 180°C Conventional',
-        bakeTime: '20-22 mins (9-inch) / 25-30 mins (9x14")',
+        bakeTime: '20-22 mins (9-inch) / 25-30 mins (9x14\")',
         steps: methodLines.length > 0 ? methodLines : [
           '1. Melt Callebaut dark chocolate and butter smoothly in microwave or over simmering water.',
           '2. Stir in golden syrup and vegetable glycerine.',
@@ -2276,9 +2273,7 @@ Store in fridge for up to 14 days or room temperature for 5 days. Wrap securely 
           '7. Cool completely at room temperature for 4-6 hours (ideally overnight) before cutting.',
           '8. Portion with warm knife and heat seal with oxygen absorbers for 2-6 weeks shelf-life.'
         ],
-        notesShelfLife: notesLines.length > 0 ? notesLines.join('\n') : '• Ambient Shelf Life: 2 Weeks in sealed pouch.
-• Fridge: 6 Weeks.
-• Crucial Ambient Thaw Rule: Rest at room temp for 4-6 hours before opening bag.',
+        notesShelfLife: notesLines.length > 0 ? notesLines.join('\n') : '• Ambient Shelf Life: 2 Weeks in sealed pouch.\n• Fridge: 6 Weeks.\n• Crucial Ambient Thaw Rule: Rest at room temp for 4-6 hours before opening bag.',
         notesHandling: 'Line tin with parchment overhang for easy removal. Warm knife between cuts.',
         costing: { batchCost: 14.50, sliceSundry: 0.15, batchSundry: 0.80, opt1Slices: 16, opt1Price: 3.00, opt2Slices: 24, opt2Price: 2.50, b2bPrice: 38.00 }
       };
@@ -2642,8 +2637,7 @@ Store in fridge for up to 14 days or room temperature for 5 days. Wrap securely 
       document.getElementById('editRecipeName').value = recipe.name || '';
       document.getElementById('editRecipeOvenTemp').value = recipe.ovenTemp || '160°C Fan';
       document.getElementById('editRecipeBakeTime').value = recipe.bakeTime || '25-30 mins';
-      document.getElementById('editRecipeSteps').value = (recipe.steps || []).join('
-');
+      document.getElementById('editRecipeSteps').value = (recipe.steps || []).join('\n');
       document.getElementById('editRecipeNotes').value = recipe.notesShelfLife || '';
 
       editRecipeActiveTinIndex = 0;
