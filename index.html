@@ -7,51 +7,58 @@
   <link rel="apple-touch-icon" href="colored-logo.png">
   <title>Ashlie Bakes Cakes - Bakery Manager</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  
+  <!-- Official Google Firebase Realtime Libraries -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #faf7f2; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #faf7f2; -webkit-tap-highlight-color: transparent; }
     .font-serif-title { font-family: 'Playfair Display', serif; }
     .nav-tab.active { background-color: #7c2d12; color: #ffffff; }
     .tin-btn.active { background-color: #b45309; color: #ffffff; font-weight: 700; }
-    button, select, input { min-height: 40px; }
+    button, select, input { min-height: 40px; touch-action: manipulation; }
   </style>
 </head>
 <body class="min-h-screen text-stone-800 flex flex-col">
 
-  <!-- HEADER -->
+  <!-- TOP HEADER -->
   <header class="bg-stone-900 text-stone-100 shadow sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-2">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-full bg-amber-600 flex items-center justify-center text-white text-xl font-bold font-serif-title">🎂</div>
         <div>
           <h1 class="text-lg sm:text-xl font-bold text-white font-serif-title">Ashlie Bakes Cakes</h1>
-          <p class="text-xs text-amber-200">Bakery Operations & Two-Way Cloud Sync</p>
+          <p class="text-xs text-amber-200">Commercial Bakery Manager & Real-Time Sync</p>
         </div>
       </div>
+      
       <div class="flex items-center gap-2 text-xs">
         <div id="lowStockBadge" class="hidden cursor-pointer bg-red-600 text-white px-3 py-1.5 rounded-full font-semibold" onclick="switchTab('inventory')">
           ⚠️ <span id="lowStockCount">0 low</span>
         </div>
-        <span id="headerSyncBadge" class="px-2.5 py-1.5 rounded-lg font-bold bg-stone-800 text-amber-300 border border-stone-700">☁️ Ready</span>
+        <span id="syncIndicator" class="px-3 py-1.5 rounded-lg font-bold bg-amber-900/60 text-amber-300 border border-amber-700/60 flex items-center gap-1.5">
+          <span class="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Connecting...
+        </span>
       </div>
     </div>
 
-    <!-- NAV TABS -->
+    <!-- MAIN APP NAVIGATION -->
     <div class="bg-stone-800 border-t border-stone-700">
       <div class="max-w-7xl mx-auto px-4 flex gap-1 overflow-x-auto text-xs sm:text-sm py-1.5">
         <button type="button" onclick="switchTab('recipes')" id="tabBtn-recipes" class="nav-tab active px-3.5 py-2 rounded-lg font-medium whitespace-nowrap">📖 Recipes & Formulas</button>
         <button type="button" onclick="switchTab('baking')" id="tabBtn-baking" class="nav-tab px-3.5 py-2 rounded-lg font-medium text-stone-300 hover:bg-stone-700 whitespace-nowrap">👩‍🍳 I Am Baking!</button>
         <button type="button" onclick="switchTab('inventory')" id="tabBtn-inventory" class="nav-tab px-3.5 py-2 rounded-lg font-medium text-stone-300 hover:bg-stone-700 whitespace-nowrap">📦 Raw Stock</button>
         <button type="button" onclick="switchTab('shed')" id="tabBtn-shed" class="nav-tab px-3.5 py-2 rounded-lg font-medium text-stone-300 hover:bg-stone-700 whitespace-nowrap">🏪 Shed & B2B</button>
-        <button type="button" onclick="switchTab('settings')" id="tabBtn-settings" class="nav-tab px-3.5 py-2 rounded-lg font-medium text-stone-300 hover:bg-stone-700 whitespace-nowrap">⚙️ Sheets Sync</button>
       </div>
     </div>
   </header>
 
-  <!-- MAIN -->
+  <!-- MAIN CONTAINER -->
   <main class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full">
 
-    <!-- TAB 1: RECIPES -->
+    <!-- TAB 1: RECIPES & FORMULAS -->
     <section id="tab-recipes" class="space-y-5">
       <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200 flex flex-wrap justify-between items-center gap-3">
         <div class="flex flex-wrap items-center gap-3">
@@ -64,7 +71,7 @@
             <select id="flavourSelect" onchange="renderActiveRecipe()" class="border border-amber-300 bg-amber-50 rounded-lg px-3 py-2 text-xs font-bold text-amber-950"></select>
           </div>
         </div>
-        <button type="button" onclick="switchTab('baking')" class="bg-amber-700 hover:bg-amber-600 text-white text-xs px-4 py-2 rounded-lg font-bold">Bake This Now →</button>
+        <button type="button" onclick="switchTab('baking')" class="bg-amber-700 hover:bg-amber-600 text-white text-xs px-4 py-2 rounded-lg font-bold shadow">Bake This Now →</button>
       </div>
 
       <div class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
@@ -88,13 +95,13 @@
 
         <div class="p-6 space-y-6">
           <div>
-            <h3 class="text-base font-bold text-stone-900 mb-2">Ingredients (<span id="selectedTinLabel">9-inch Square Tray Bake</span>)</h3>
+            <h3 class="text-base font-bold text-stone-900 mb-2">Formula Ingredients (<span id="selectedTinLabel">9-inch Square Tray Bake</span>)</h3>
             <div class="overflow-x-auto">
               <table class="w-full text-left text-sm border-collapse">
                 <thead class="bg-stone-100 text-stone-600 text-xs uppercase">
                   <tr>
                     <th class="p-3">Ingredient</th>
-                    <th class="p-3">Recipe Qty</th>
+                    <th class="p-3">Recipe Quantity</th>
                     <th class="p-3">Stock on Hand</th>
                   </tr>
                 </thead>
@@ -104,71 +111,83 @@
           </div>
 
           <div>
-            <h3 class="text-base font-bold text-stone-900 mb-2">Method</h3>
+            <h3 class="text-base font-bold text-stone-900 mb-2">Production Method</h3>
             <ol id="recipeMethodList" class="list-decimal pl-5 space-y-2 text-sm text-stone-700"></ol>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- TAB 2: BAKING -->
+    <!-- TAB 2: BAKING PRODUCTION -->
     <section id="tab-baking" class="hidden space-y-5">
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 space-y-5">
         <div>
-          <h2 class="text-xl font-bold text-stone-900 font-serif-title">Log a Bake & Deduct Stock</h2>
-          <p class="text-xs text-stone-500 mt-1">Deducts ingredients and adds finished portions to Shed Stock.</p>
+          <span class="text-xs uppercase tracking-wider text-amber-700 font-bold">Production Run</span>
+          <h2 class="text-2xl font-bold text-stone-900 font-serif-title mt-1">Log a Bake & Auto-Deduct Inventory</h2>
+          <p class="text-xs text-stone-500 mt-1">Deducts exact ingredients automatically and credits finished slices to your Shed Stock across all devices instantly.</p>
         </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           <div>
-            <label class="block font-bold text-stone-700 mb-1">Recipe</label>
+            <label class="block font-bold text-stone-700 mb-1 uppercase">1. Item</label>
             <select id="bakeRecipeSelect" onchange="populateBakeOptions()" class="w-full border border-stone-300 rounded-lg p-2.5 bg-stone-50 font-bold"></select>
           </div>
           <div>
-            <label class="block font-bold text-stone-700 mb-1">Flavour</label>
-            <select id="bakeFlavourSelect" onchange="renderBakePreview()" class="w-full border border-amber-300 rounded-lg p-2.5 bg-amber-50 font-bold"></select>
+            <label class="block font-bold text-stone-700 mb-1 uppercase">2. Flavour / Style</label>
+            <select id="bakeFlavourSelect" onchange="renderBakePreview()" class="w-full border border-amber-300 rounded-lg p-2.5 bg-amber-50 font-bold text-amber-950"></select>
           </div>
           <div>
-            <label class="block font-bold text-stone-700 mb-1">Tin Size</label>
+            <label class="block font-bold text-stone-700 mb-1 uppercase">3. Tin Size</label>
             <select id="bakeTinSelect" onchange="renderBakePreview()" class="w-full border border-stone-300 rounded-lg p-2.5 bg-stone-50 font-bold"></select>
           </div>
         </div>
-        <div class="overflow-x-auto">
+
+        <!-- Deduction Preview -->
+        <div class="overflow-x-auto border border-stone-200 rounded-xl">
           <table class="w-full text-left text-xs border-collapse">
-            <thead class="bg-stone-100 text-stone-700 uppercase">
+            <thead class="bg-stone-100 text-stone-700 uppercase font-semibold">
               <tr>
-                <th class="p-2.5">Ingredient</th>
-                <th class="p-2.5">Deduct</th>
-                <th class="p-2.5">Current</th>
-                <th class="p-2.5">After Bake</th>
+                <th class="p-2.5">Ingredient / Inclusion</th>
+                <th class="p-2.5">To Deduct</th>
+                <th class="p-2.5">Current Stock</th>
+                <th class="p-2.5">Stock After Bake</th>
+                <th class="p-2.5">Status</th>
               </tr>
             </thead>
-            <tbody id="bakePreviewBody" class="divide-y divide-stone-100"></tbody>
+            <tbody id="bakePreviewBody" class="divide-y divide-stone-200"></tbody>
           </table>
         </div>
-        <div class="flex justify-end">
-          <button type="button" onclick="confirmBake()" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow">✨ Confirm Bake & Update Stock</button>
+
+        <div class="flex justify-end pt-1">
+          <button type="button" onclick="confirmBake()" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl text-sm shadow transition flex items-center gap-2">
+            <span>✨</span> Confirm Bake & Auto-Update All Devices
+          </button>
         </div>
       </div>
     </section>
 
-    <!-- TAB 3: INVENTORY -->
+    <!-- TAB 3: RAW STOCK INVENTORY -->
     <section id="tab-inventory" class="hidden space-y-5">
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 space-y-4">
         <div class="flex flex-wrap justify-between items-center gap-3">
           <div>
-            <h2 class="text-xl font-bold text-stone-900 font-serif-title">Raw Ingredients Stock</h2>
-            <p class="text-xs text-stone-500">Edit stock quantities directly and save/sync automatically.</p>
+            <h2 class="text-xl font-bold text-stone-900 font-serif-title">Raw Ingredients Master Stock</h2>
+            <p class="text-xs text-stone-500">Edit quantities directly. Any change syncs to your other devices live in real-time.</p>
           </div>
-          <button type="button" onclick="pushToCloud(true)" class="bg-stone-800 hover:bg-stone-900 text-white text-xs px-4 py-2 rounded-lg font-bold">☁️ Push to Sheet</button>
+          <button type="button" onclick="openNewItemModal()" class="bg-stone-800 hover:bg-stone-700 text-white text-xs px-3.5 py-2 rounded-lg font-bold transition">
+            + New Ingredient
+          </button>
         </div>
+
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm border-collapse">
-            <thead class="bg-stone-100 text-stone-600 text-xs uppercase">
+            <thead class="bg-stone-100 text-stone-600 text-xs uppercase font-semibold">
               <tr>
                 <th class="p-3">Ingredient</th>
-                <th class="p-3">Current Stock</th>
-                <th class="p-3">Threshold</th>
+                <th class="p-3">Current Stock (Click to Edit)</th>
+                <th class="p-3">Min Alert Threshold</th>
                 <th class="p-3">Status</th>
+                <th class="p-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody id="inventoryBody" class="divide-y divide-stone-100"></tbody>
@@ -177,17 +196,24 @@
       </div>
     </section>
 
-    <!-- TAB 4: SHED -->
+    <!-- TAB 4: SHED & B2B INVENTORY -->
     <section id="tab-shed" class="hidden space-y-5">
       <div class="bg-white p-5 rounded-2xl shadow-sm border border-stone-200 space-y-4">
-        <h2 class="text-xl font-bold text-stone-900 font-serif-title">Shed & B2B Stock</h2>
+        <div class="flex flex-wrap justify-between items-center gap-3">
+          <div>
+            <span class="text-xs uppercase tracking-wider text-amber-700 font-bold">Baked Goods</span>
+            <h2 class="text-xl font-bold text-stone-900 font-serif-title mt-1">Honesty Shed & B2B Stock</h2>
+            <p class="text-xs text-stone-500">Log sales or restocks. Tapping updates instantly on all connected devices.</p>
+          </div>
+        </div>
+
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm border-collapse">
-            <thead class="bg-stone-100 text-stone-600 text-xs uppercase">
+            <thead class="bg-stone-100 text-stone-600 text-xs uppercase font-semibold">
               <tr>
-                <th class="p-3">Item</th>
-                <th class="p-3">Stock</th>
-                <th class="p-3 text-right">Adjust</th>
+                <th class="p-3">Product Name</th>
+                <th class="p-3">In Stock</th>
+                <th class="p-3 text-right">Log Sale / Restock</th>
               </tr>
             </thead>
             <tbody id="shedBody" class="divide-y divide-stone-100"></tbody>
@@ -196,26 +222,42 @@
       </div>
     </section>
 
-    <!-- TAB 5: SHEETS SYNC -->
-    <section id="tab-settings" class="hidden space-y-5">
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 space-y-4 max-w-xl">
-        <h2 class="text-xl font-bold text-stone-900 font-serif-title">Two-Way Google Sheets Sync</h2>
-        <div>
-          <label class="block text-xs font-bold text-stone-700 uppercase mb-1">Google Apps Script Web App URL</label>
-          <input type="text" id="webhookUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-stone-300 rounded-xl p-3 text-xs bg-stone-50 font-mono">
-        </div>
-        <div class="flex flex-wrap gap-2 pt-1">
-          <button type="button" onclick="saveWebhook()" class="bg-amber-700 hover:bg-amber-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl">Save URL</button>
-          <button type="button" onclick="pushToCloud(true)" class="bg-stone-800 hover:bg-stone-900 text-white font-bold text-xs px-4 py-2.5 rounded-xl">⬆️ Push to Sheet</button>
-          <button type="button" onclick="pullFromCloud(true)" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl">⬇️ Pull from Sheet</button>
-        </div>
-        <p id="syncMsg" class="text-xs font-semibold text-emerald-700"></p>
-      </div>
-    </section>
-
   </main>
 
+  <!-- MODAL: ADD NEW INGREDIENT -->
+  <div id="newIngModal" class="hidden fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-xl border border-stone-200">
+      <h3 class="text-base font-bold text-stone-900 font-serif-title">+ Add New Ingredient</h3>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-stone-700 mb-1">Ingredient Name</label>
+          <input type="text" id="newIngName" class="w-full border border-stone-300 rounded-lg p-2 font-bold outline-none" placeholder="e.g. White Chocolate Chips">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">Starting Stock</label>
+            <input type="number" id="newIngStock" class="w-full border border-stone-300 rounded-lg p-2 font-bold outline-none" value="1000">
+          </div>
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">Unit</label>
+            <input type="text" id="newIngUnit" class="w-full border border-stone-300 rounded-lg p-2 font-bold outline-none" value="g">
+          </div>
+        </div>
+        <div>
+          <label class="block font-bold text-stone-700 mb-1">Low Alert Threshold</label>
+          <input type="number" id="newIngThreshold" class="w-full border border-stone-300 rounded-lg p-2 font-bold outline-none" value="500">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button type="button" onclick="closeNewItemModal()" class="px-3 py-1.5 border border-stone-300 rounded-lg text-xs font-semibold text-stone-600">Cancel</button>
+        <button type="button" onclick="submitNewIngredient()" class="bg-amber-700 hover:bg-amber-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow">Save Item</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC & FIREBASE REALTIME CONNECTION -->
   <script>
+    // 1. Initial Local State (fallback if offline)
     let inventory = [
       { id: 'ing_1', name: 'Butter', stock: 400, threshold: 1000, unit: 'g' },
       { id: 'ing_2', name: 'Stork', stock: 800, threshold: 1000, unit: 'g' },
@@ -289,7 +331,7 @@
           'Melt dark chocolate and butter gently until smooth.',
           'Stir in golden syrup and vegetable glycerine.',
           'Whip eggs and sugars until pale and ribbony, then fold in chocolate mixture.',
-          'Fold in flour and cocoa powder gently.',
+          'Fold in gluten-free flour and cocoa powder gently.',
           'Bake at 160°C Fan until edges are set with a slight centre wobble.',
           'Cool completely before slicing and sealing.'
         ]
@@ -297,29 +339,73 @@
     ];
 
     let activeTinIdx = 0;
+    let isRemoteUpdate = false;
 
-    function loadData() {
-      try {
-        const i = localStorage.getItem('abc_inv_v13');
-        if (i) inventory = JSON.parse(i);
-        const s = localStorage.getItem('abc_shed_v13');
-        if (s) shedStock = JSON.parse(s);
-        const r = localStorage.getItem('abc_rec_v13');
-        if (r) recipes = JSON.parse(r);
-        const u = localStorage.getItem('googleSheetWebhookUrl');
-        if (u && document.getElementById('webhookUrlInput')) {
-          document.getElementById('webhookUrlInput').value = u;
+    // 2. Exact Firebase Configuration for Ashlie-Bakery-Manager
+    const firebaseConfig = {
+      apiKey: "AIzaSyB0aNJRyEbLWeJpWFYC__bHhVTr8HqMCSY",
+      authDomain: "ashlie-bakery-manager.firebaseapp.com",
+      databaseURL: "https://ashlie-bakery-manager-default-rtdb.firebaseio.com",
+      projectId: "ashlie-bakery-manager",
+      storageBucket: "ashlie-bakery-manager.firebasestorage.app",
+      messagingSenderId: "49003708649",
+      appId: "1:49003708649:web:84f10fd39ed459d2213078"
+    };
+
+    let db = null;
+    let bakeryRef = null;
+
+    try {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.database();
+      bakeryRef = db.ref('bakeryMasterData');
+
+      // 3. AUTOMATIC REAL-TIME LISTENER
+      // Fires immediately on page load AND whenever any device changes data!
+      bakeryRef.on('value', (snapshot) => {
+        const cloudData = snapshot.val();
+        if (cloudData && cloudData.inventory) {
+          isRemoteUpdate = true;
+          inventory = cloudData.inventory;
+          if (cloudData.shedStock) shedStock = cloudData.shedStock;
+          if (cloudData.recipes) recipes = cloudData.recipes;
+          
+          renderInventory();
+          renderShed();
+          renderActiveRecipe();
+          populateBakeOptions();
+          isRemoteUpdate = false;
+        } else {
+          // If brand new / empty cloud database, push the initial clean dataset!
+          syncToFirebase();
         }
-      } catch (err) {}
+
+        const badge = document.getElementById('syncIndicator');
+        badge.innerHTML = '<span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span> 🟢 Live Synced';
+        badge.className = 'px-3 py-1.5 rounded-lg font-bold bg-emerald-950/60 text-emerald-300 border border-emerald-700/60 flex items-center gap-1.5';
+      }, (error) => {
+        console.error("Firebase listen error:", error);
+        const badge = document.getElementById('syncIndicator');
+        badge.innerHTML = '⚠️ Sync Issue';
+        badge.className = 'px-3 py-1.5 rounded-lg font-bold bg-rose-950/60 text-rose-300 border border-rose-700/60 flex items-center gap-1.5';
+      });
+
+    } catch (err) {
+      console.error("Firebase init failed:", err);
     }
 
-    function saveData() {
-      localStorage.setItem('abc_inv_v13', JSON.stringify(inventory));
-      localStorage.setItem('abc_shed_v13', JSON.stringify(shedStock));
-      localStorage.setItem('abc_rec_v13', JSON.stringify(recipes));
-      updateLowStockBadge();
+    // 4. AUTOMATIC PUSH TO FIREBASE (No buttons needed!)
+    function syncToFirebase() {
+      if (isRemoteUpdate || !bakeryRef) return;
+      bakeryRef.set({
+        inventory: inventory,
+        shedStock: shedStock,
+        recipes: recipes,
+        lastUpdated: new Date().toISOString()
+      }).catch(err => console.error("Firebase write error:", err));
     }
 
+    // 5. Navigation & UI Logic
     function switchTab(tab) {
       document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
       document.querySelectorAll('.nav-tab').forEach(el => {
@@ -377,7 +463,7 @@
       rec.tinSizes.forEach((t, idx) => {
         const b = document.createElement('button');
         b.type = 'button';
-        b.className = `tin-btn px-3 py-1 rounded text-xs border border-stone-600 ${idx === activeTinIdx ? 'active' : 'bg-stone-800 text-stone-200'}`;
+        b.className = `tin-btn px-3 py-1 rounded text-xs border border-stone-600 transition ${idx === activeTinIdx ? 'active' : 'bg-stone-800 text-stone-200'}`;
         b.textContent = t.name;
         b.onclick = () => { activeTinIdx = idx; renderActiveRecipe(); };
         tinRow.appendChild(b);
@@ -435,6 +521,7 @@
       const rec = recipes.find(r => r.id === document.getElementById('bakeRecipeSelect').value) || recipes[0];
       const fSel = document.getElementById('bakeFlavourSelect');
       const tSel = document.getElementById('bakeTinSelect');
+      if (!fSel || !tSel) return;
       fSel.innerHTML = '';
       tSel.innerHTML = '';
       rec.flavours.forEach(f => {
@@ -465,10 +552,11 @@
         const curr = invItem ? invItem.stock : 0;
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="p-2.5 font-semibold">${item.name}</td>
+          <td class="p-2.5 font-semibold text-stone-800">${item.name}</td>
           <td class="p-2.5 text-red-700 font-bold">-${item.qty} ${item.unit}</td>
-          <td class="p-2.5">${curr} ${item.unit}</td>
-          <td class="p-2.5 font-bold">${curr - item.qty} ${item.unit}</td>
+          <td class="p-2.5 text-stone-600">${curr} ${item.unit}</td>
+          <td class="p-2.5 font-bold ${curr - item.qty < 0 ? 'text-red-600' : 'text-stone-800'}">${curr - item.qty} ${item.unit}</td>
+          <td class="p-2.5">${curr - item.qty < 0 ? '<span class="text-red-700 font-bold">⚠️ Low</span>' : '<span class="text-emerald-700 font-bold">OK</span>'}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -492,23 +580,38 @@
       if (sItem) sItem.stock += 18;
       else shedStock.push({ id: 's_' + Date.now(), name: shedName, stock: 18 });
 
-      saveData();
-      pushToCloud(false);
-      alert('Bake logged and stock updated!');
+      // Automatically broadcasts new state to all devices!
+      syncToFirebase();
+      alert(`Bake logged! Deducted ingredients and credited 18 slices of ${shedName}.`);
       switchTab('inventory');
     }
 
+    // Direct Editable Inventory
     function renderInventory() {
       const tbody = document.getElementById('inventoryBody');
       tbody.innerHTML = '';
       inventory.forEach(item => {
         const isLow = item.stock <= item.threshold;
         const tr = document.createElement('tr');
+        tr.className = "hover:bg-stone-50 transition";
         tr.innerHTML = `
-          <td class="p-3 font-semibold">${item.name}</td>
-          <td class="p-3"><input type="number" value="${item.stock}" onchange="updateStock('${item.id}', this.value)" class="w-24 border border-stone-300 rounded px-2 py-1 text-xs font-bold"> ${item.unit}</td>
-          <td class="p-3 text-xs">${item.threshold} ${item.unit}</td>
-          <td class="p-3 text-xs"><span class="px-2 py-0.5 rounded font-bold ${isLow ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}">${isLow ? 'Low' : 'OK'}</span></td>
+          <td class="p-3 font-semibold text-stone-900">${isLow ? '⚠️ ' : ''}${item.name}</td>
+          <td class="p-3">
+            <div class="flex items-center gap-1.5">
+              <input type="number" value="${item.stock}" onchange="updateStock('${item.id}', this.value)" class="w-24 border border-stone-300 rounded px-2 py-1 text-xs font-bold bg-white outline-none focus:ring-2 focus:ring-amber-500">
+              <span class="text-xs text-stone-500 font-medium">${item.unit}</span>
+            </div>
+          </td>
+          <td class="p-3 text-xs text-stone-600">${item.threshold} ${item.unit}</td>
+          <td class="p-3 text-xs">
+            <span class="px-2.5 py-0.5 rounded-full font-bold ${isLow ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}">
+              ${isLow ? 'Reorder Needed' : 'In Stock'}
+            </span>
+          </td>
+          <td class="p-3 text-right">
+            <button type="button" onclick="quickAddStock('${item.id}', 500)" class="text-xs bg-stone-100 hover:bg-stone-200 border border-stone-300 px-2.5 py-1 rounded font-bold text-stone-700 transition">+500</button>
+            <button type="button" onclick="deleteStockItem('${item.id}')" class="text-xs text-red-600 hover:text-red-800 ml-2 font-medium">Delete</button>
+          </td>
         `;
         tbody.appendChild(tr);
       });
@@ -519,9 +622,25 @@
       const item = inventory.find(i => i.id === id);
       if (item) {
         item.stock = parseFloat(val) || 0;
-        saveData();
+        syncToFirebase();
         renderInventory();
-        pushToCloud(false);
+      }
+    }
+
+    function quickAddStock(id, amt) {
+      const item = inventory.find(i => i.id === id);
+      if (item) {
+        item.stock += amt;
+        syncToFirebase();
+        renderInventory();
+      }
+    }
+
+    function deleteStockItem(id) {
+      if (confirm('Delete this ingredient?')) {
+        inventory = inventory.filter(i => i.id !== id);
+        syncToFirebase();
+        renderInventory();
       }
     }
 
@@ -536,86 +655,62 @@
       }
     }
 
+    // Shed Stock
     function renderShed() {
       const tbody = document.getElementById('shedBody');
       tbody.innerHTML = '';
       shedStock.forEach(s => {
         const tr = document.createElement('tr');
+        tr.className = "hover:bg-stone-50 transition";
         tr.innerHTML = `
-          <td class="p-3 font-semibold">${s.name}</td>
-          <td class="p-3 font-bold">${s.stock}</td>
-          <td class="p-3 text-right"><button type="button" onclick="changeShed('${s.id}', -1)" class="border px-2.5 py-1 rounded text-xs font-bold">-1 Sold</button></td>
+          <td class="p-3 font-semibold text-stone-900">${s.name}</td>
+          <td class="p-3 font-bold text-base text-amber-950">${s.stock}</td>
+          <td class="p-3 text-right">
+            <button type="button" onclick="changeShed('${s.id}', -1)" class="bg-stone-100 hover:bg-stone-200 border border-stone-300 px-3 py-1 rounded font-bold text-xs text-stone-800 transition">-1 Sold</button>
+            <button type="button" onclick="changeShed('${s.id}', 1)" class="bg-stone-100 hover:bg-stone-200 border border-stone-300 px-3 py-1 rounded font-bold text-xs text-stone-800 ml-1 transition">+1</button>
+          </td>
         `;
         tbody.appendChild(tr);
       });
     }
 
-    function changeShed(id, d) {
+    function changeShed(id, delta) {
       const s = shedStock.find(x => x.id === id);
       if (s) {
-        s.stock = Math.max(0, s.stock + d);
-        saveData();
+        s.stock = Math.max(0, s.stock + delta);
+        syncToFirebase();
         renderShed();
-        pushToCloud(false);
       }
     }
 
-    function saveWebhook() {
-      const url = document.getElementById('webhookUrlInput').value.trim();
-      localStorage.setItem('googleSheetWebhookUrl', url);
-      document.getElementById('syncMsg').textContent = 'Webhook URL saved!';
-      pushToCloud(true);
+    // Modal Helpers
+    function openNewItemModal() {
+      document.getElementById('newIngName').value = '';
+      document.getElementById('newIngModal').classList.remove('hidden');
     }
-
-    async function pushToCloud(showAlert) {
-      const url = localStorage.getItem('googleSheetWebhookUrl');
-      if (!url) { if (showAlert) alert('Enter Google Web App URL first.'); return; }
-      try {
-        document.getElementById('headerSyncBadge').textContent = '⏳ Syncing...';
-        await fetch(url, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({ inventory, shedStock, recipes, updatedAt: new Date().toISOString() })
-        });
-        document.getElementById('headerSyncBadge').textContent = '☁️ Synced';
-        if (showAlert) alert('Synced to Google Sheet!');
-      } catch (e) {
-        document.getElementById('headerSyncBadge').textContent = '⚠️ Error';
-      }
+    function closeNewItemModal() {
+      document.getElementById('newIngModal').classList.add('hidden');
     }
-
-    async function pullFromCloud(showAlert) {
-      const url = localStorage.getItem('googleSheetWebhookUrl');
-      if (!url) { if (showAlert) alert('Enter Google Web App URL first.'); return; }
-      try {
-        document.getElementById('headerSyncBadge').textContent = '⏳ Pulling...';
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data && data.inventory) {
-          inventory = data.inventory;
-          if (data.shedStock) shedStock = data.shedStock;
-          if (data.recipes) recipes = data.recipes;
-          saveData();
-          initSelectors();
-          renderActiveRecipe();
-          renderInventory();
-          renderShed();
-          document.getElementById('headerSyncBadge').textContent = '☁️ Synced';
-          if (showAlert) alert('Pulled latest data from Google Sheet!');
-        }
-      } catch (e) {
-        document.getElementById('headerSyncBadge').textContent = '⚠️ Error';
-      }
+    function submitNewIngredient() {
+      const name = document.getElementById('newIngName').value.trim();
+      if (!name) return alert('Name required');
+      inventory.push({
+        id: 'ing_' + Date.now(),
+        name: name,
+        stock: parseFloat(document.getElementById('newIngStock').value) || 0,
+        unit: document.getElementById('newIngUnit').value.trim() || 'g',
+        threshold: parseFloat(document.getElementById('newIngThreshold').value) || 500
+      });
+      syncToFirebase();
+      closeNewItemModal();
+      renderInventory();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      loadData();
       initSelectors();
       renderActiveRecipe();
-      updateLowStockBadge();
-      const url = localStorage.getItem('googleSheetWebhookUrl');
-      if (url) pullFromCloud(false);
+      renderInventory();
+      renderShed();
     });
   </script>
 </body>
